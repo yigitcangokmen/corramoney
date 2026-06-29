@@ -108,3 +108,32 @@ Full design notes are published in [`/docs`](docs):
 | [Ledger](docs/ledger.md) | The Postgres schema: saga state, payment legs, and the append-only event log. |
 | [API](docs/api.md) | The `/quote` and `/confirm` HTTP surface the client app talks to. |
 | [Testing](docs/testing.md) | How each leg and failure path is verified, end to end. |
+
+---
+
+## What we are building (30-day plan)
+
+A working, open-source remittance flow on Stellar testnet, proven end-to-end by testnet transaction hashes.
+
+| Deliverable | What ships | How you verify it |
+|---|---|---|
+| **D1 -- Anchor-aggregation layer + settlement** | The `AnchorAdapter` interface with two live testnet implementations (a MockAdapter and a SEP-24 adapter against Stellar's reference test anchor), a custodial keystore, a market-maker seeding DEX liquidity, and a strict-receive `MXN -> USDC -> PHP` path payment. Tests + CI. | A path-payment tx hash on stellar.expert, and the same happy-path test passing against both adapters. |
+| **D2 -- Orchestrator + ledger** | A `/quote` + `/confirm` API and a `PaymentSaga` over a Postgres ledger, plus the failure branches that make it a product: over-sendmax refund and lost-cash-in reconciliation. | An automated `/confirm -> CREDITED` tx hash and a refund tx hash on stellar.expert. |
+| **D3 -- Hosted demo + open-source packaging** | The full lifecycle as a hosted testnet demo, an open-source repo with a reproducible quickstart, and a walkthrough video. | A live demo URL, the public repo, and a 2-minute walkthrough. |
+
+**Weekly:** Week 1 the adapter + settlement core, Week 2 the orchestrator + ledger + failure paths, Week 3 the hosted demo + packaging, Week 4 final testnet deployment + video + docs.
+
+Real anchor integrations (Etherfuse, MoneyGram, and others) and mainnet are explicitly Phase 2 / Phase 3. The AnchorAdapter is built as the hook they plug into.
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Language | TypeScript, end to end |
+| Stellar | `@stellar/stellar-sdk` |
+| Orchestrator | Node.js + Fastify |
+| Database | Postgres (saga state + append-only event log) |
+| Frontend | React + Vite |
+| Monorepo | pnpm + turbo |
