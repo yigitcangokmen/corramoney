@@ -44,3 +44,67 @@ A sender in Mexico wants to send money to Maria in the Philippines:
 5. **Cash-out (optional)** -- Maria withdraws to local cash through an anchor.
 
 Every step is verifiable on `stellar.expert` by a transaction hash. No engineering knowledge required to check it.
+
+---
+
+## Architecture
+
+<img src="assets/architecture.png" alt="Corra architecture" width="100%" />
+
+Five layers, with one rule: **the app never sees keys or the chain.** It talks only to the Corra API. Only the Stellar layer touches Stellar. Only adapters touch anchors. The core (saga + ledger) is agnostic to both and knows only interfaces.
+
+```mermaid
+flowchart TB
+    App["Client App<br/>sender + recipient view"]
+    subgraph Core["Corra Orchestrator (the brain)"]
+        Q["Quote engine"]
+        SAGA["Saga state machine"]
+        ADP["Anchor Adapter layer (the moat)"]
+        LED[("Ledger DB<br/>payments / legs / events")]
+    end
+    STL["Stellar layer<br/>keystore · trustlines · strict-receive path payment · market-maker · Horizon watcher"]
+    ANC["Anchors<br/>MockAdapter (now) -> Etherfuse / MoneyGram (Phase 2)"]
+    NET["Stellar testnet<br/>DEX liquidity · USDC hub"]
+
+    App --> Core
+    Q --> SAGA
+    SAGA --> ADP
+    SAGA --> LED
+    ADP --> ANC
+    Core --> STL
+    STL --> NET
+```
+
+The **AnchorAdapter** is a single internal interface that every anchor (and the mock) implements. Adding a new corridor means writing a new adapter, not touching the core. That is what turns a one-off integration into an aggregator.
+
+### Payment lifecycle
+
+The orchestrator drives every transfer through an explicit, idempotent state machine. Only the on-chain leg is atomic; the cash-in and cash-out legs are slow and external, so the flow is a saga with compensation (refund) built in.
+
+```mermaid
+stateDiagram-v2
+    [*] --> QUOTED
+    QUOTED --> CASH_IN_PENDING: user confirms
+    CASH_IN_PENDING --> CASH_IN_CONFIRMED: anchor credits funds
+    CASH_IN_PENDING --> FAILED: timeout / rejected
+    CASH_IN_CONFIRMED --> ONCHAIN_PENDING: submit strict-receive path payment
+    ONCHAIN_PENDING --> CREDITED: settles (~5s, atomic)
+    ONCHAIN_PENDING --> REFUNDING: no route / tx fails
+    REFUNDING --> QUOTED: sender refunded
+    CREDITED --> WITHDRAW_PENDING: recipient cashes out
+    CREDITED --> [*]: funds in recipient wallet (safe terminal)
+    WITHDRAW_PENDING --> COMPLETED
+    FAILED --> [*]
+    COMPLETED --> [*]
+```
+
+Full design notes are published in [`/docs`](docs):
+
+| Doc | What's inside |
+|---|---|
+| [Architecture](docs/architecture.md) | The five layers, the golden rule, and why the adapter layer is the moat. |
+| [Flows](docs/flows.md) | The happy path and every failure branch as explicit saga sequences. |
+| [Contracts](docs/contracts.md) | The TypeScript type boundaries that isolate the core from anchors and the chain. |
+| [Ledger](docs/ledger.md) | The Postgres schema: saga state, payment legs, and the append-only event log. |
+| [API](docs/api.md) | The `/quote` and `/confirm` HTTP surface the client app talks to. |
+| [Testing](docs/testing.md) | How each leg and failure path is verified, end to end. |
