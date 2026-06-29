@@ -137,3 +137,18 @@ Real anchor integrations (Etherfuse, MoneyGram, and others) and mainnet are expl
 | Database | Postgres (saga state + append-only event log) |
 | Frontend | React + Vite |
 | Monorepo | pnpm + turbo |
+
+---
+
+## Status
+
+Testnet, in active development. No real money is moved; custodial testnet keys are destroyed at project end.
+
+## Contact
+
+Website: [corra.money](https://corra.money)
+Twitter / X: [@corra_money](https://x.com/corra_money)
+
+## License
+
+[MIT](LICENSE).
