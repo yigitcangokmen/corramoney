@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 70" role="img" aria-label="Corra">
+  <g transform="translate(3,9) scale(0.52)">
+    <circle cx="50" cy="50" r="50" fill="#5b3df5"/>
+    <path d="M82 24a36 36 0 100 52L62 60a14 14 0 110-20z" fill="#fff" transform="translate(-7,0)"/>
+  </g>
+  <text x="75" y="54" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="46" font-weight="800" letter-spacing="-1" fill="#f0f6fc">Corra</text>
+</svg>

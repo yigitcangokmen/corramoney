@@ -2,7 +2,12 @@
 
 <img src="assets/hero.png" alt="Corra: One tap. Two countries. Zero friction." width="100%" />
 
-# Corra
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg" />
+    <img src="assets/wordmark-light.svg" alt="Corra" width="230" />
+  </picture>
+</h1>
 
 ### Money, teleported.
 
