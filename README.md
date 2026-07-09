@@ -11,7 +11,7 @@
 
 ### Money, teleported.
 
-Corra is a cross-border remittance app on Stellar, powered by an open-source **anchor-aggregation layer**.
+Corra is a cross-border remittance app on Stellar, powered by an open-source **anchor integration layer**.
 Send local cash in one country, your recipient gets local cash in another, and nobody ever sees the word "crypto."
 
 [![Website](https://img.shields.io/badge/corra.money-5B3DF5)](https://corra.money)
@@ -30,7 +30,7 @@ Cross-border money transfer still settles in 1-3 days and loses 5-7% to fees plu
 
 Stellar already has the rails to fix this: a single **path payment** atomically converts one currency to another through USDC on the open DEX at near-zero cost, and Stellar's own path-finding already picks the cheapest on-chain route.
 
-What is missing sits one layer up: an **anchor aggregator** that normalizes fragmented fiat on/off-ramps behind a single adapter interface and routes each corridor to a usable ramp, while orchestrating cash-in -> USDC hub -> cash-out as one flow.
+What is missing sits one layer up: an **anchor integration layer** that normalizes fragmented fiat on/off-ramps behind a single adapter interface, while orchestrating cash-in -> USDC hub -> cash-out as one flow.
 
 > **Liquidity on paper is not a usable ramp.** Most anchors that hold local liquidity expose no developer-integratable on/off-ramp. The path payment is a commodity. The orchestration layer that makes heterogeneous, not-ready anchors usable is the moat.
 
@@ -80,7 +80,9 @@ flowchart TB
     STL --> NET
 ```
 
-The **AnchorAdapter** is a single internal interface that every anchor (and the mock) implements. Adding a new corridor means writing a new adapter, not touching the core. That is what turns a one-off integration into an aggregator.
+The **AnchorAdapter** is a single internal interface that every anchor (and the mock) implements. Adding a new corridor means writing a new adapter, not touching the core.
+
+We are careful about what this proves. Today there is no real anchor behind the interface, so Corra is an integration layer, not an aggregator: it makes one ramp swappable, it does not yet route between competing ramps for the same leg. What D1 demonstrates is the mechanism, by running the same happy-path test against two structurally different adapters (a synchronous mint/burn mock and an interactive SEP-24 anchor) with no change to the saga or the ledger. The inventory of real ramps, and the routing between them that would earn the word *aggregator*, is Phase 2 work that depends on anchors saying yes.
 
 ### Payment lifecycle
 
@@ -122,7 +124,7 @@ A working, open-source remittance flow on Stellar testnet, proven end-to-end by 
 
 | Deliverable | What ships | How you verify it |
 |---|---|---|
-| **D1 -- Anchor-aggregation layer + settlement** | The `AnchorAdapter` interface with two live testnet implementations (a MockAdapter and a SEP-24 adapter against Stellar's reference test anchor), a custodial keystore, a market-maker seeding DEX liquidity, and a strict-receive `MXN -> USDC -> PHP` path payment. Tests + CI. | A path-payment tx hash on stellar.expert, and the same happy-path test passing against both adapters. |
+| **D1 -- Anchor integration layer + settlement** | The `AnchorAdapter` interface with two live testnet implementations (a MockAdapter and a SEP-24 adapter against Stellar's reference test anchor), a custodial keystore, a market-maker seeding DEX liquidity, and a strict-receive `MXN -> USDC -> PHP` path payment. Tests + CI. | A path-payment tx hash on stellar.expert, and the same happy-path test passing against both adapters. |
 | **D2 -- Orchestrator + ledger** | A `/quote` + `/confirm` API and a `PaymentSaga` over a Postgres ledger, plus the failure branches that make it a product: over-sendmax refund and lost-cash-in reconciliation. | An automated `/confirm -> CREDITED` tx hash and a refund tx hash on stellar.expert. |
 | **D3 -- Hosted demo + open-source packaging** | The full lifecycle as a hosted testnet demo, an open-source repo with a reproducible quickstart, and a walkthrough video. | A live demo URL, the public repo, and a 2-minute walkthrough. |
 

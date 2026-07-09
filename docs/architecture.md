@@ -56,7 +56,7 @@ Concrete implementations (in priority order):
 - `Sep31Adapter`: Bitso-style (SEP-31 + SEP-38).
 - `EtherfuseRampAdapter`: custom REST + claimable-balance onramp (not the classic SEP-24).
 
-> A new anchor means a new adapter file. The saga, ledger, and app never change. **This is exactly where the aggregator value lies.**
+> A new anchor means a new adapter file. The saga, ledger, and app never change. **This is exactly where the integration-layer value lies.**
 
 ---
 
