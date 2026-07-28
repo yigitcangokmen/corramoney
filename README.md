@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/hero.png" alt="Corra: One tap. Two countries. Zero friction." width="100%" />
+<img src="assets/hero.png" alt="Corra: send local cash, get local cash. Cross-border remittance on Stellar." width="100%" />
 
 <h1 align="center">
   <picture>
