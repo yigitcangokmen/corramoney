@@ -7,15 +7,16 @@
 | Level | What it tests | Speed | Doubles |
 |---|---|---|---|
 | **Unit** | pure functions: maxSend calculation, `Money` arithmetic, `isAllowedTransition` | ms | none |
-| **Integration** | saga + ledger + adapter + gateway together (state flow) | s | `MockAdapter`, `FakeStellarGateway`, Postgres (testcontainers) |
+| **Integration** | saga + ledger + adapter + gateway together (state flow) | s | `FakeAnchor`, `FakeStellarGateway`, Postgres (testcontainers) |
 | **E2E** | real testnet path payment (single happy path) | min | real Horizon + seeded MM |
 
 Most tests are at the **integration** level, because the value of the saga lies in how the components behave together. Unit tests provide fast assurance, and E2E provides proof that it works "for real on chain" (nightly/manual).
 
 ## 2. Test Doubles (Determinism)
 
-- **`FakeStellarGateway`**: returns a programmable result for `payStrictReceive` (SUCCESS / `op_over_sendmax` / `op_no_trust`). Keeps balances in memory, so conservation of value can be asserted.
-- **`MockAdapter`**: deposit/withdraw events are **triggered by the test** (not automatic), so webhook timing can be controlled.
+- **`FakeStellarGateway`**: returns a programmable result for `submitSigned` (SUCCESS / `op_over_sendmax` / `op_no_trust` / `tx_too_late`). Keeps balances in memory, so conservation of value can be asserted.
+- **Keyless assertion**: the suite reads the orchestrator's build and submit sources and fails if `Keypair.fromSecret`, a stored secret, or a `.sign(` call reappears. The claim that the server cannot sign is a test, not a promise.
+- **`FakeAnchor`**: deposit/withdraw events are **triggered by the test** (not automatic), so webhook timing can be controlled.
 - **Injected clock**: `now()` is injected, so TTL/expiry can be tested deterministically.
 - **Seeded MM**: a fixed offer set, so path finding is predictable.
 

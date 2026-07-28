@@ -66,7 +66,9 @@ export type Quote = {
 };
 ```
 
-## 3. Anchor Adapter (`packages/anchor-adapters`) ★ moat
+## 3. Anchor legs (`packages/anchors`)
+
+SEP-1/10/12/24 come from [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) and we write no SEP client code; swapping a SEP-24 anchor is changing `homeDomain`. The types below are the orchestrator's *internal* normalization of a leg's state, so the saga and ledger do not have to care whether a leg came from the SDK or from a thin client written for a ramp that implements no SEP (Etherfuse being the case that forces one).
 
 ```ts
 export type LegStatus = "PENDING" | "CONFIRMED" | "FAILED";
@@ -90,8 +92,8 @@ export type NormalizedEvent = {
   raw: unknown;               // original payload (audit)
 };
 
-export interface AnchorAdapter {
-  readonly id: string;                                   // "mock" | "moneygram" | "etherfuse"
+export interface AnchorLeg {
+  readonly id: string;                                   // "testanchor" | "moneygram" | "etherfuse"
   capabilities(): AdapterCapabilities;
   getQuote(req: QuoteRequest): Promise<Quote>;
   initiateDeposit(req: DepositRequest): Promise<{ ref: string; interactiveUrl?: string; instructions?: unknown }>;
@@ -101,24 +103,25 @@ export interface AnchorAdapter {
 }
 ```
 
-> The core only knows about `AnchorAdapter`; the SEP-24/SEP-31/Etherfuse-REST differences stay in the implementation. New anchor = new file.
+> This is a normalization of leg *state* for the saga, not a reimplementation of the SEPs. A SEP-24 anchor is driven by the wallet SDK behind it. SEP-31 is absent on purpose: its sending side requires a licensed entity with bilateral agreements, so a consumer app cannot implement it.
 
-## 4. Stellar Gateway + KeyStore (`packages/stellar`)
+## 4. Stellar Gateway (`packages/stellar`)
+
+There is no `KeyStore` interface here, and that is the point: the orchestrator has no signing capability. It builds an unsigned transaction and later submits one that was signed elsewhere.
 
 ```ts
-/** Custody abstraction. Now custodial-testnet, later non-custodial/KMS with the same interface. */
-export interface KeyStore {
-  create(): Promise<{ accountId: string }>;              // generate keypair + store
-  sign(accountId: string, xdr: string): Promise<string>; // returns signed XDR
-}
-
 export interface StellarGateway {
+  /** Build only. Never signs. */
+  buildStrictReceive(p: {
+    from: string; to: string; dest: Money; sendMax: Money; path: AssetId[]; timeoutSec: number;
+  }): Promise<{ xdr: string; sequence: string; expiresAt: number }>;
+
+  /** Relay a transaction signed by the client. Rejects an unsigned or unexpected one. */
+  submitSigned(p: { xdr: string; idemKey: string }): Promise<{ txHash: string }>;
+
   ensureAccount(accountId: string): Promise<void>;       // friendbot fund (testnet)
   ensureTrustline(accountId: string, asset: AssetId): Promise<void>; // sponsored reserve
   findPathStrictReceive(p: { source: string; dest: Money; sourceAssets: AssetId[] }): Promise<{ path: AssetId[]; estSource: Money }>;
-  payStrictReceive(p: {
-    from: string; to: string; dest: Money; sendMax: Money; path: AssetId[]; idemKey: string;
-  }): Promise<{ txHash: string }>;
   watchTx(txHash: string): Promise<{ status: "SUCCESS" | "FAILED" }>;
 }
 ```

@@ -4,160 +4,167 @@
 
 | Decision | Choice | Outcome |
 |---|---|---|
-| **Custody** | Thin custodial, **testnet** | Corra holds the testnet keys (custodial wallet). The real custody/licensing question is deferred and abstracted behind a keystore, so a later move to non-custodial is possible. |
-| **Recipient** | **Corra wallet** | Funds land in the recipient's Corra account; they hold the balance or withdraw it later. Cash-out is a separate/optional leg, which reduces saga risk. |
-| **Demo** | **Pure testnet mock** | testanchor.stellar.org plus our own seeded DEX liquidity. Requires no permissions or anchor approval. |
+| **Custody** | **None. The server holds no private key.** | The sender signs the payment client-side; the orchestrator only builds the unsigned transaction and relays the signed one. This is enforced by tests that read the endpoint sources and fail if signing code reappears. |
+| **Recipient** | **Corra wallet** | Funds land in the recipient's own account; they hold the balance or withdraw later. Cash-out is a separate optional leg, which reduces saga risk. |
+| **Demo** | **Testnet, self-seeded liquidity** | testanchor.stellar.org plus our own seeded DEX offers. Requires no anchor permission. |
 
-**Design principle:** The moat is not path payment (that is a commodity). The moat is the **Anchor Adapter layer** (which normalizes heterogeneous anchors) plus the **orchestration saga** (which safely manages the three legs). Build the architecture around these two, so that replacing mocks with real anchors is just a matter of adding a new adapter.
+**Design principle:** the path payment is a commodity and we treat it as one. What we build is the part no existing building block provides: driving an *asynchronous* payment without ever holding a key, and the ledger and failure handling around it.
 
 ---
 
 ## 1. Layers
 
 ```
-[ Client / App ]   sender + recipient view · no use of the word "crypto" · Corra API only
+[ Client / App ]   sender + recipient view · signs locally · never says "crypto"
         │
-[ Corra Orchestrator ]   THE BRAIN
+[ Corra Orchestrator ]
    ├─ Quote engine        FX + DEX strict-receive path estimation
+   ├─ Builder             constructs the UNSIGNED transaction (sendMax + timebound)
    ├─ Saga state machine  transitions between legs + compensation/refund
-   ├─ Anchor Adapter layer ★ MOAT  normalizes the cash-in/cash-out gateways
-   ├─ Ledger (DB)         the single source of truth for payment state + timeline
-   └─ Webhook/poll ingest normalizes anchor events
+   ├─ Relay               submits the signed XDR once cash-in confirms
+   ├─ Ledger (DB)         single source of truth for payment state + timeline
+   └─ Event ingest        normalizes anchor webhooks/polls
         │
-[ Stellar layer ]   account/trustline · path payment · claimable balance
-   │                USDC hub · market-maker seeding · Horizon watcher · custodial keystore
-[ Anchor network ]  testanchor (mock) -> later Etherfuse/MoneyGram (behind the adapter)
-[ Stellar testnet ] DEX/liquidity · USDC issuer
+[ Stellar layer ]   trustlines (sponsored) · path payment · market-maker · Horizon watcher
+[ Anchor network ]  testanchor (SEP-24 via the wallet SDK) -> later a real ramp
+[ Stellar testnet ] DEX liquidity · USDC hub
 ```
 
-**Golden rule:** The app never sees keys or the chain; it only talks to the Corra API. The only place that touches Stellar is the `stellar` layer. The only place that touches anchors is the adapters. The core (saga + ledger) is unaware of both and knows only their interfaces.
+**Golden rule:** the orchestrator can build and relay, but it cannot sign. There is no keystore in this diagram, by design.
 
 ---
 
-## 2. Anchor Adapter: the concrete form of the moat
+## 2. Anchor integration: what we depend on, what we write
 
-A single internal interface; every anchor (and mock) sits behind it. The core does not know which anchor it is talking to.
+We do not define an abstraction over the SEPs. SEP-1, SEP-10, SEP-12 and SEP-24 are consumed through SDF's [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) as a declared dependency, and we write no SEP client code.
 
 ```ts
-interface AnchorAdapter {
-  id: string
-  capabilities(): { onramp: boolean; offramp: boolean; assets: AssetId[]; corridors: Corridor[]; kyc: 'none'|'anchor'|'corra' }
-  getQuote(req: QuoteReq): Promise<Quote>                 // firm/indicative
-  initiateDeposit(req): Promise<{ ref: string; interactiveUrl?: string; instructions?: any }>   // cash-in
-  initiateWithdraw(req): Promise<{ ref: string; payoutDetails: any }>                            // cash-out
-  status(ref: string): Promise<LegStatus>                 // PENDING|CONFIRMED|FAILED
-  parseEvent(payload): NormalizedEvent                    // webhook/poll -> single event type
-}
+import { Wallet } from '@stellar/typescript-wallet-sdk'
+
+const anchor = wallet.anchor({ homeDomain: 'testanchor.stellar.org' })
+const auth   = await anchor.sep10()
+const kyc    = await anchor.sep12(token)
+const deposit = await anchor.sep24().deposit({ ... })
 ```
 
-Concrete implementations (in priority order):
-- **`MockAdapter`**: testnet demo. On cash-in it credits test-MXN, on cash-out it burns. The Corra market-maker provides the liquidity. *This is what we are building now.*
-- `Sep24Adapter`: testanchor.stellar.org (SEP-10 + SEP-24). The standard path; MoneyGram will later fit here too.
-- `Sep31Adapter`: Bitso-style (SEP-31 + SEP-38).
-- `EtherfuseRampAdapter`: custom REST + claimable-balance onramp (not the classic SEP-24).
+Swapping anchors is changing `homeDomain`. That is the SDK's design, not something we add.
 
-> A new anchor means a new adapter file. The saga, ledger, and app never change. **This is exactly where the integration-layer value lies.**
+**The one case that needs code from us** is a ramp that implements no SEP at all. Etherfuse, the only Mexico ramp with a working developer sandbox, exposes a proprietary REST API with no `TRANSFER_SERVER_SEP0024`. The wallet SDK has no plugin point for that: its `Anchor`, `Sep24` and `Sep6` classes are concrete and hardwired to TOML endpoint shapes, and the only injection points are a custom Axios instance and the signer interfaces. So a non-SEP ramp has to be a sibling module, not a registered plugin.
+
+If and when that is needed, it is a thin client for one named anchor, sitting beside the SDK rather than wrapping it.
+
+**On SEP-31:** the spec requires both the sending and receiving side to be licensed anchors with bilateral agreements in place. A consumer app is not a sending anchor. It is out of scope here, and the wallet SDK does not implement it either.
 
 ---
 
-## 3. Flow (sender wallet -> recipient Corra wallet)
+## 3. Flow (sender -> recipient Corra wallet)
 
 ```
-1. QUOTED              strict-receive: "Maria should receive ₱11,210" -> compute what the sender pays
-2. CASH_IN (mock)      MockAdapter credits test-MXN to the sender's account
-3. ONCHAIN  (~5s)      strict-receive path payment:
-                       test-MXN -> USDC(hub) -> test-PHP  -> lands in the RECIPIENT's Corra account  [ATOMIC]
-4. CREDITED            funds are in the recipient's wallet: a safe terminal state
-5. WITHDRAW (optional) if the recipient wants, cash out via MockAdapter (a separate async leg)
+1. QUOTED     strict-receive: "Maria should receive PHP 11,210" -> compute what the sender pays
+2. SIGNED     the sender signs the path payment locally (sendMax cap + timebound).
+              The signed XDR goes to the orchestrator. The key does not.
+3. CASH_IN    the anchor credits the sender's account. Minutes may pass; the sender can leave.
+4. ONCHAIN    the orchestrator submits the already-signed transaction:
+              MXN -> USDC(hub) -> PHP, into the RECIPIENT's account   [ATOMIC, ~3s]
+5. CREDITED   funds are in the recipient's wallet: a safe terminal state
+6. WITHDRAW   optional cash-out through an anchor (a separate async leg)
 ```
 
-**Why this order is safe:** The only atomic point is leg 3 (the path payment). Because the funds rest in the recipient's own account at step 4, even if cash-out (5) fails the money is not lost; it simply waits in the wallet. The recipient-wallet decision is what simplifies the saga here.
+**Why the order is safe:** the only atomic point is step 4. Because funds rest in the recipient's own account at step 5, a failed cash-out does not lose money; it waits in the wallet.
 
 **Compensation:**
-- Path payment fails after cash-in -> refund the sender's test-MXN, fall back to QUOTED.
-- Path payment partial fill risk -> use **strict-receive** (the amount the recipient gets is fixed; the source side varies, protected by a max-send limit).
+- Source cost moves past `sendMax` -> the payment fails rather than silently costing more; the sender is refunded and falls back to QUOTED.
+- The timebound expires before cash-in confirms -> the signed transaction is dead. The sender is asked to sign again. Never silently stuck.
 - Withdraw fails -> no-op, the money stays in the wallet, retry.
 
 ---
 
 ## 4. Stellar layer: concrete testnet details
 
-- **Custodial keystore:** Corra generates/stores a testnet keypair for each user. For now it is simple (an encrypted store), but it sits behind a `KeyStore` interface, so a later move to non-custodial/KMS is a single implementation change.
-- **Account setup:** fund via friendbot, open trustlines with **sponsored reserves**, so the user never holds XLM. Each account gets a trustline for the assets it will hold (test-MXN, test-PHP, USDC).
-- **USDC hub + market-maker:** a Corra-controlled hub plus a market-maker account **seeds** test-MXN<->USDC and USDC<->test-PHP offers on the DEX. Without this, the path payment cannot find liquidity to match against: a mandatory architectural piece for the demo.
-- **Path payment:** `pathPaymentStrictReceive`. The route is found via `/paths/strict-receive`. Quote expiry + slippage buffer (max-send).
-- **Monitoring & reconciliation:** every payment carries an idempotency id; the Horizon transaction result is watched; a **poll fallback** guards against lost webhooks. The Ledger (DB) is the source of truth; Stellar is settlement.
+- **No keystore.** The orchestrator builds with `TransactionBuilder` and submits with `submitTransaction`. It never calls `Keypair.fromSecret`, and never calls `.sign()`.
+- **Pre-signed transaction:** `pathPaymentStrictReceive` with a `sendMax` cap and a timebound, signed client-side and held as an XDR until cash-in confirms. Two costs are accepted and handled explicitly: it pins a sequence number, and it can expire.
+- **Account setup:** fund via friendbot, open trustlines with **sponsored reserves** so the user never has to hold XLM.
+- **USDC hub + market-maker:** a market-maker account seeds MXN<->USDC and USDC<->PHP offers on the testnet DEX. Without it the path payment has nothing to match against. This is a testnet setup step, not a product feature.
+- **Path payment:** route found via `/paths/strict-receive`. Quote TTL plus a slippage buffer expressed as `sendMax`.
+- **Monitoring & reconciliation:** every payment carries an idempotency id; the Horizon result is watched; a poll fallback guards against lost webhooks. The ledger is the source of truth; Stellar is settlement.
 
 ---
 
-## 5. Proposed repository layout (the real product repo, later)
+## 5. Proposed repository layout
 
-A monorepo (pnpm + turbo recommended), end-to-end **TypeScript**, `@stellar/stellar-sdk`:
+A monorepo (pnpm + turbo), end-to-end **TypeScript**:
 
 ```
-apps/web                 sender + recipient view (landing already exists)
-services/orchestrator    API + saga + quote + ledger (Node/Fastify)
-packages/anchor-adapters ★ interface + MockAdapter + Sep24Adapter …
-packages/stellar         account/trustline/path-payment/keystore/MM/watcher
-packages/shared          types, Money, Quote, Corridor, AssetId
+apps/web                 sender + recipient view; builds and signs locally
+services/orchestrator    API + saga + quote + builder + relay + ledger (Node/Fastify)
+packages/anchors         wallet-SDK usage; a thin client only for a non-SEP ramp
+packages/stellar         trustlines, path-payment construction, market-maker, watcher
+packages/shared          types: Money, Quote, Corridor, AssetId
 ```
-DB: Postgres (saga state + timeline). Because this layout **isolates the core from anchors and from the chain**, the mock-to-real transition is a minimal diff.
+
+DB: Postgres (saga state + timeline).
 
 ---
 
-## 6. Not built now but with a slot reserved (deferred)
+## 6. Deferred, with a slot reserved
 
 | Deferred | How it slots in |
 |---|---|
-| Real anchors (Etherfuse/MoneyGram) | A new `AnchorAdapter` implementation |
-| Non-custodial keys | A new implementation of the `KeyStore` interface |
-| Real KYC/compliance | `kyc: 'anchor'` + SEP-12/SEP-24 webview |
-| Mainnet custody / licensing | A custody decision + money-transmitter analysis |
-| Travel rule (SEP-31) | sender/receiver data inside Sep31Adapter |
+| A real anchor (Etherfuse / MoneyGram) | wallet SDK `homeDomain` for SEP-24 anchors; a thin client for a non-SEP ramp |
+| Real KYC/compliance | SEP-12 through the wallet SDK, driven by the anchor |
+| Mainnet | Requires a licensed anchor relationship, not more code |
+| Hardware / passkey signing | A different client-side signer. The server is unaffected because it cannot sign either way. |
+
+Note that passkey and Soroban smart-wallet signing is **not** a drop-in here: a contract address cannot be the source account of a classic `pathPaymentStrictReceive`. Moving there would mean moving FX off the classic DEX, which is a different architecture.
 
 ---
 
-## 7. Assumptions (correct if wrong)
+## 7. Assumptions
 
-- End-to-end TypeScript, `@stellar/stellar-sdk`, orchestrator on Node/Fastify, app on React/Vite, DB on Postgres.
+- End-to-end TypeScript; `@stellar/stellar-sdk` and `@stellar/typescript-wallet-sdk`; orchestrator on Node/Fastify; app on React/Vite; Postgres.
 - Monorepo (pnpm/turbo).
-- In the PoC, both sender and recipient have a Corra (custodial) account.
+- The sender controls their own key. In the public demo that key is a throwaway testnet account shipped to the browser on purpose, so anyone can click without installing a wallet; a real deployment swaps in a wallet signer with no server-side change.
 
 ## 8. Sub-decisions (resolved)
 
 | Question | Decision | Rationale |
 |---|---|---|
-| **App framework** | **React + Vite (SPA)** | Compatible with the existing tooling (the site is already Vite+TS); for a custodial testnet PoC, SSR/server-routing is unnecessary. The orchestrator is a separate Fastify service, so the app stays a pure client. No need for the complexity Next would bring. |
-| **Quote: firm vs indicative** | **Indicative + 30s TTL**, the recipient side **guaranteed via strict-receive** | A firm quote requires a SEP-38/anchor commitment, which the mock does not have. The amount the recipient gets (₱) is fixed via strict-receive; volatility falls on the source side. The slippage buffer is **1.5% max-send** on top. Re-quote if the TTL expires. |
-| **Is recipient withdraw included in the PoC** | **Yes but minimal**: the climax is CREDITED, withdraw is an optional button | Step 5 of the landing is "cash out", so keep a mock withdraw leg to show the full lifecycle, but the peak of the demo is the money landing in the recipient's wallet (CREDITED). Withdraw is complementary, not the focus. |
-| **Ledger schema** | **`payments` + `legs` + append-only `payment_events`** (not full event-sourcing) | A pragmatic middle ground: state lives in `payments`/`legs`, while the timeline UI (the 5-step diagram) is fed from the `payment_events` log. Full event-sourcing is overkill for a PoC. |
-| **Market-maker seed** | **Fixed offers** (seeded at startup), with wide depth around the pegged rate | A dynamic MM is unnecessary complexity. A `seed-liquidity` script sets up test-MXN<->USDC and USDC<->test-PHP offers; enough depth for the whole demo. Re-seeding is manual. |
+| **App framework** | **React + Vite (SPA)** | Matches the existing tooling. The orchestrator is a separate Fastify service, so the app stays a pure client. Signing happens here, which is another reason it must be a real client and not an SSR surface. |
+| **Quote: firm vs indicative** | **Indicative + 30s TTL**, recipient side **guaranteed via strict-receive** | A firm quote needs a SEP-38 anchor commitment we do not have. The recipient amount is fixed; volatility falls on the source side, bounded by `sendMax`. |
+| **Signing timing** | **Sign before cash-in, submit after** | A remittance is asynchronous: cash-in confirms after the sender has left. Signing up front is what removes the need for custody. The cost is a pinned sequence number and an expiry branch, both handled. |
+| **Timebound length** | **180s in the demo; tunable per corridor** | Long enough for a testnet cash-in simulation, short enough that a stale signed transaction cannot linger. A real cash-in leg needs a longer window and a re-sign prompt. |
+| **Ledger schema** | **`payments` + `legs` + append-only `payment_events`** | State lives in `payments`/`legs`; the timeline UI is fed from the event log. Full event-sourcing is overkill. |
+| **Market-maker seed** | **Fixed offers**, wide depth around the pegged rate | A dynamic MM is unnecessary complexity. Re-seeding is manual. |
 
 ## 9. Diagrams
 
-### 9.1 Layers & moat (component)
+### 9.1 Components
 
 ```mermaid
 flowchart TB
-    App["Client App<br/>sender + recipient view"]
-    subgraph Core["Corra Orchestrator (the brain)"]
+    App["Client App<br/>builds view · SIGNS locally"]
+    subgraph Core["Corra Orchestrator (no keys)"]
         Q["Quote engine"]
+        B["Builder<br/>unsigned XDR"]
         SAGA["Saga state machine"]
-        ADP["AnchorAdapter layer ★ moat"]
+        REL["Relay<br/>submits signed XDR"]
         LED[("Ledger DB<br/>payments · legs · events")]
     end
-    STL["Stellar layer<br/>keystore · path payment · MM · watcher"]
-    ANC["Anchors<br/>Mock -> Etherfuse / MoneyGram"]
+    SDK["@stellar/typescript-wallet-sdk<br/>SEP-1/10/12/24"]
+    STL["Stellar layer<br/>trustlines · path payment · MM · watcher"]
+    ANC["Anchors<br/>testanchor -> a real ramp"]
     NET["Stellar testnet<br/>DEX · USDC hub"]
 
     App --> Core
-    Q --> SAGA
-    SAGA --> ADP
+    Q --> B
+    B --> App
+    App -- "signed XDR" --> REL
     SAGA --> LED
-    ADP --> ANC
-    Core --> STL
+    SAGA --> REL
+    Core --> SDK
+    SDK --> ANC
+    REL --> STL
     STL --> NET
-    ANC -. "SEP-24 / REST" .-> NET
 ```
 
 ### 9.2 Saga state machine
@@ -165,17 +172,20 @@ flowchart TB
 ```mermaid
 stateDiagram-v2
     [*] --> QUOTED
-    QUOTED --> CASH_IN_PENDING: user confirms
-    CASH_IN_PENDING --> CASH_IN_CONFIRMED: MockAdapter credits test-MXN
+    QUOTED --> SIGNED: sender signs client-side
+    SIGNED --> CASH_IN_PENDING: awaiting the anchor
+    CASH_IN_PENDING --> CASH_IN_CONFIRMED: anchor credits funds
     CASH_IN_PENDING --> FAILED: timeout / rejected
-    CASH_IN_CONFIRMED --> ONCHAIN_PENDING: send strict-receive path payment
-    ONCHAIN_PENDING --> CREDITED: path payment settles (~5s, atomic)
-    ONCHAIN_PENDING --> REFUNDING: no route / tx fail
-    REFUNDING --> QUOTED: refund test-MXN to sender
+    CASH_IN_CONFIRMED --> ONCHAIN_PENDING: relay submits the signed XDR
+    ONCHAIN_PENDING --> CREDITED: settles (~3s, atomic)
+    ONCHAIN_PENDING --> EXPIRED: tx_too_late, timebound passed
+    ONCHAIN_PENDING --> REFUNDING: no route / over sendMax
+    EXPIRED --> QUOTED: sender signs again
+    REFUNDING --> QUOTED: sender refunded
     CREDITED --> [*]: funds in recipient wallet (safe terminal)
     CREDITED --> WITHDRAW_PENDING: recipient chooses cash-out
-    WITHDRAW_PENDING --> COMPLETED: MockAdapter burn + payout
-    WITHDRAW_PENDING --> CREDITED: withdraw fail, money stays in wallet
+    WITHDRAW_PENDING --> COMPLETED
+    WITHDRAW_PENDING --> CREDITED: withdraw failed, money stays in wallet
     COMPLETED --> [*]
     FAILED --> [*]
 ```
@@ -187,26 +197,27 @@ sequenceDiagram
     autonumber
     participant S as Sender App
     participant O as Orchestrator
-    participant A as MockAdapter
+    participant A as Anchor
     participant X as Stellar testnet
-    participant MM as Corra Market-Maker
+    participant MM as Market-Maker
     participant R as Recipient Wallet
 
-    S->>O: quote (MXN->PHP, "Maria should receive ₱11,210")
+    S->>O: quote (MXN->PHP, "Maria should receive PHP 11,210")
     O->>X: /paths/strict-receive
-    X-->>O: route test-MXN->USDC->test-PHP + source cost
-    O-->>S: quote (source amount, TTL 30s)
-    S->>O: confirm
-    O->>A: initiateDeposit(sender, test-MXN)
+    X-->>O: route MXN->USDC->PHP + source cost
+    O-->>S: unsigned XDR (sendMax cap, timebound) + quote
+    Note over S: signs locally. The key never leaves the client.
+    S->>O: signed XDR
+    O->>A: initiate deposit (cash-in)
+    Note over S,A: the sender can walk away here
     A-->>O: CASH_IN_CONFIRMED
-    Note over MM,X: MM has pre-seeded test-MXN<->USDC, USDC<->test-PHP offers
-    O->>X: pathPaymentStrictReceive (dest = recipient)
-    X-->>O: ONCHAIN settled (atomic ~5s)
-    O->>R: credit test-PHP
-    O-->>S: COMPLETED (Maria received it)
-    opt recipient cashes out
-        R->>O: withdraw
-        O->>A: initiateWithdraw(test-PHP)
-        A-->>O: COMPLETED (burn + payout)
+    Note over MM,X: MM has pre-seeded MXN<->USDC and USDC<->PHP offers
+    O->>X: submit the signed transaction
+    X-->>O: settled (atomic, ~3s)
+    O->>R: recipient credited
+    O-->>S: CREDITED
+    opt timebound expired first
+        X-->>O: tx_too_late
+        O-->>S: sign again
     end
 ```
