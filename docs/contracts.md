@@ -66,48 +66,31 @@ export type Quote = {
 };
 ```
 
-## 3. Anchor legs (`packages/anchors`)
+## 3. Anchor leg state (`packages/anchors`)
 
-SEP-1/10/12/24 come from [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) and we write no SEP client code; swapping a SEP-24 anchor is changing `homeDomain`. The types below are the orchestrator's *internal* normalization of a leg's state, so the saga and ledger do not have to care whether a leg came from the SDK or from a thin client written for a ramp that implements no SEP (Etherfuse being the case that forces one).
+SEP-1/10/12/24/38 come from [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) and we write no SEP client code; swapping a SEP-24 anchor is changing `homeDomain`.
+
+**There is deliberately no anchor interface here.** v1 talks to one anchor, through the wallet SDK, using the SDK's own types. An `AnchorAdapter`-shaped abstraction with `capabilities()`, `getQuote()`, `initiateDeposit()` and `status()` is exactly the anchor abstraction this project commits not to write, and writing one before a second anchor exists would be inventing a seam to fit a future we have not met. If a ramp that implements no SEP ever has to be integrated, that is the moment to design the seam, with the real second case in hand.
+
+The two types below are the saga's own internal state, not an anchor abstraction: a leg status the ledger stores, and the shape of a verified SEP-24 callback.
 
 ```ts
 export type LegStatus = "PENDING" | "CONFIRMED" | "FAILED";
 
-export type AdapterCapabilities = {
-  onramp: boolean;
-  offramp: boolean;
-  assets: AssetId[];
-  corridors: Corridor[];
-  kyc: "none" | "anchor" | "corra";
-};
-
-export type DepositRequest  = { account: string; asset: AssetId; amount: Money; idemKey: string };
-export type WithdrawRequest = { account: string; asset: AssetId; amount: Money; payout: unknown; idemKey: string };
-
-export type NormalizedEvent = {
-  ref: string;                // leg reference on the adapter side
+export type Sep24Callback = {
+  ref: string;                // SEP-24 transaction id on the anchor side
   kind: "deposit" | "withdraw";
   status: LegStatus;
   at: number;
   raw: unknown;               // original payload (audit)
 };
-
-export interface AnchorLeg {
-  readonly id: string;                                   // "testanchor" | "moneygram" | "etherfuse"
-  capabilities(): AdapterCapabilities;
-  getQuote(req: QuoteRequest): Promise<Quote>;
-  initiateDeposit(req: DepositRequest): Promise<{ ref: string; interactiveUrl?: string; instructions?: unknown }>;
-  initiateWithdraw(req: WithdrawRequest): Promise<{ ref: string; payoutDetails: unknown }>;
-  status(ref: string): Promise<LegStatus>;
-  parseEvent(payload: unknown): NormalizedEvent;         // webhook/poll -> single normalized type
-}
 ```
 
-> This is a normalization of leg *state* for the saga, not a reimplementation of the SEPs. A SEP-24 anchor is driven by the wallet SDK behind it. SEP-31 is absent on purpose: its sending side requires a licensed entity with bilateral agreements, so a consumer app cannot implement it.
+> SEP-31 is absent on purpose: its sending side requires a licensed entity with bilateral agreements, so a consumer app cannot implement it. SEP-24 is the wallet-side standard and is what the SDK drives.
 
 ## 4. Stellar Gateway (`packages/stellar`)
 
-There is no `KeyStore` interface here, and that is the point: the orchestrator has no signing capability. It builds an unsigned transaction and later submits one that was signed elsewhere.
+There is no `KeyStore` interface here, and that is the point: the orchestrator never signs with a user's key. The one server-side key it does hold, the fee-and-sponsor account, signs only fee-bump envelopes and `BeginSponsoringFutureReserves` and can move no user value. It builds an unsigned transaction and later submits one that was signed elsewhere.
 
 ```ts
 export interface StellarGateway {
@@ -130,14 +113,13 @@ export interface StellarGateway {
 
 ```ts
 export type PaymentState =
-  | "QUOTED" | "CASH_IN_PENDING" | "CASH_IN_CONFIRMED"
-  | "ONCHAIN_PENDING" | "CREDITED"
-  | "WITHDRAW_PENDING" | "COMPLETED"
-  | "REFUNDING" | "FAILED";
+  | "QUOTED" | "SIGNED" | "CASH_IN"
+  | "ONCHAIN" | "CREDITED"
+  | "EXPIRED" | "CAP_EXCEEDED";   // CREDITED / EXPIRED / CAP_EXCEEDED are terminal
 
 export type Leg = {
   kind: "cash_in" | "onchain" | "cash_out";
-  adapterId?: string;
+  anchorId?: string;
   externalRef?: string;
   txHash?: string;
   status: LegStatus;
@@ -161,10 +143,10 @@ export type Payment = {
 /** Orchestrator external surface. API + event + reconcile go through these three gates. */
 export interface PaymentSaga {
   quote(req: QuoteRequest): Promise<Quote>;
-  confirm(quoteId: string, p: { sender: string; recipient: string }): Promise<Payment>; // starts QUOTED
-  onEvent(ev: NormalizedEvent): Promise<void>;        // anchor webhook -> advance state
-  tick(paymentId: string): Promise<void>;             // reconcile/poll fallback (against webhook loss)
-  withdraw(paymentId: string): Promise<void>;         // CREDITED -> WITHDRAW_PENDING (optional)
+  confirm(quoteId: string, p: { sender: string; recipient: string; signedXdr: string }): Promise<Payment>; // -> SIGNED
+  onCashIn(ev: Sep24Callback): Promise<void>;         // SEP-24 callback, after chain confirmation
+  reconcile(paymentId: string): Promise<void>;        // advances from chain state; creates no new state
+  resign(supersedesId: string, signedXdr: string): Promise<Payment>;  // new saga; never revives a terminal one
 }
 ```
 

@@ -25,12 +25,12 @@ sequenceDiagram
     O->>K: preflight ensureAccount/ensureTrustline (sender, recipient)
     O->>A: initiateDeposit(sender, TEST_MXN)
     A-->>O: ref (PENDING)
-    O->>L: CASH_IN_PENDING
-    A-->>O: webhook deposit CONFIRMED
-    O->>L: CASH_IN_CONFIRMED
+    O->>L: CASH_IN
+    A-->>O: cash-in callback (verified on chain before advancing)
+    O->>L: CASH_IN
     O->>K: submitSigned(XDR)
     K->>X: path payment tx
-    X-->>K: SUCCESS (atomic ~3s)
+    X-->>K: SUCCESS (atomic)
     O->>L: ONCHAIN -> CREDITED (+ event)
     O-->>S: GET /payments/:id -> CREDITED (Maria received it)
     Note over S,X: Funds are in Maria's wallet: safe terminal state
@@ -39,7 +39,7 @@ sequenceDiagram
 
 ## 2. Failure: over-sendmax (exchange rate moved)
 
-After cash-in, the market moves; the actual source cost exceeds `sendMax` -> the tx is rejected -> **refund** -> re-quote. The sender's funds are not lost.
+After cash-in, the market moves and the actual source cost exceeds `sendMax`, so the operation fails on chain. **Nothing moves**: no path payment is applied and the sender keeps the deposited asset in an account only they can sign for. The fee and the sequence number are consumed, so the signed blob is spent and a retry is a new saga.
 
 ```mermaid
 sequenceDiagram
@@ -51,16 +51,15 @@ sequenceDiagram
     participant A as Anchor
     participant X as Stellar testnet
 
-    Note over O,L: ...CASH_IN_CONFIRMED (Diego's TEST_MXN is ready)
+    Note over O,L: ...CASH_IN (Diego's TEST_MXN is ready)
     O->>K: submitSigned(XDR)
     K->>X: path payment tx
     X-->>K: op_over_sendmax (cost > sendMax)
-    O->>L: ONCHAIN_PENDING -> REFUNDING (+ event: reason)
-    O->>A: refund initiateWithdraw(sender, TEST_MXN)
-    A-->>O: refund CONFIRMED
-    O->>L: REFUNDING -> QUOTED
-    O-->>S: 409 "rate updated, get a fresh quote"
-    S->>O: POST /quote (again)
+    X-->>O: FAILED tx lands in a ledger (fee + sequence consumed)
+    O->>L: ONCHAIN -> CAP_EXCEEDED (terminal, + event: reason)
+    Note over S,A: No refund leg runs. Diego already holds the deposited<br/>TEST_MXN in an account only he can sign for.
+    O-->>S: 409 "cost moved past your cap, get a fresh quote"
+    S->>O: POST /quote, then POST /resign (new saga, supersedesId)
 ```
 
 ## 3. Failure: no route / insufficient liquidity
@@ -81,9 +80,9 @@ sequenceDiagram
     Note over O,X: No funds moved. The demo cap (≤ MXN 50k) prevents this in practice (R1).
 ```
 
-## 4. Failure: webhook loss -> reconcile (tick)
+## 4. Failure: callback loss -> reconcile (tick)
 
-If the anchor webhook never arrives, the payment is stuck in PENDING. The `tick` job pulls the true status from Horizon/adapter and advances it. **At-least-once delivery, exactly-once effect.**
+If the anchor callback never arrives, the payment is stuck in PENDING. The reconciler pulls the authoritative fact from Horizon and from the SEP-24 transaction status, and advances the saga to match. Repeated delivery is harmless at the ledger level, and **exactly-once submission comes from the protocol**: Stellar consumes the sequence number on the first successful submission and rejects every later resubmission of the same blob.
 
 ```mermaid
 sequenceDiagram
@@ -94,12 +93,12 @@ sequenceDiagram
     participant A as Anchor
     participant X as Stellar testnet
 
-    Note over L: payment stuck in CASH_IN_PENDING for >Xs (webhook did not arrive)
+    Note over L: payment stuck in CASH_IN for >Xs (callback did not arrive)
     T->>O: tick(paymentId)
     O->>A: status(ref)
     A-->>O: CONFIRMED
-    O->>L: FOR UPDATE -> transition allowed? -> CASH_IN_CONFIRMED (event seq+1)
-    Note over O,L: If a late duplicate webhook arrives afterward:<br/>UNIQUE(payment_id,seq) conflicts -> no-op
+    O->>L: FOR UPDATE -> transition allowed? -> CASH_IN (event seq+1)
+    Note over O,L: If a late duplicate callback arrives afterward:<br/>UNIQUE(payment_id,seq) conflicts -> no-op
     O->>X: submitSigned(XDR) ... (flow continues)
 ```
 
@@ -116,11 +115,11 @@ sequenceDiagram
     participant K as Stellar
     participant X as Stellar testnet
 
-    Note over O,L: ...CASH_IN_CONFIRMED, but later than the timebound allowed
+    Note over O,L: ...CASH_IN, but later than the timebound allowed
     O->>K: submitSigned(XDR)
     K->>X: path payment tx
     X-->>K: tx_too_late
-    O->>L: ONCHAIN_PENDING -> EXPIRED (+ event: reason)
+    O->>L: ONCHAIN -> EXPIRED (+ event: reason)
     O-->>S: 409 "signed transaction expired, please sign again"
     S->>O: POST /quote (fresh XDR to sign)
     Note over O,X: No funds moved on-chain. The cash-in balance stays with the sender.
@@ -128,5 +127,5 @@ sequenceDiagram
 
 ## Summary
 - **Single atomic point:** the path payment (third leg). Everything before and after is saga.
-- **Every failure transitions to a state:** over-sendmax -> REFUNDING -> QUOTED, no-path -> 422 at quote, webhook-loss -> tick reconcile, expired timebound -> EXPIRED -> re-sign.
-- **Funds never evaporate:** either refunded to the sender, or in the recipient's wallet (CREDITED is the safe terminal state).
+- **Every failure transitions to a state:** over-sendmax -> CAP_EXCEEDED (terminal, re-sign opens a new saga), no-path -> 422 at quote, callback-loss -> tick reconcile, expired timebound -> EXPIRED (terminal, re-sign opens a new saga).
+- **Funds never evaporate:** either still in the sender's own account (nothing moved, so nothing needs refunding), or in the recipient's wallet (`CREDITED` is the safe terminal state).

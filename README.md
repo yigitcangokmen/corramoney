@@ -29,7 +29,7 @@ Send local cash in one country, your recipient gets local cash in another, and n
 **[test.corra.money](https://test.corra.money)** runs a real Stellar testnet payment on every click. Not a mockup, not a recording:
 
 ```
-MXN 3,499.99  ->  USDC  ->  PHP 11,210      settled in ~3s
+MXN 3,499.99  ->  USDC  ->  PHP 11,210      settled in seconds
 ```
 
 Each run submits a live `path_payment_strict_receive` and gives you the transaction hash to check on `stellar.expert` yourself. The verify link only appears once *that* run has a hash, so you are never shown a canned transaction as proof.
@@ -40,7 +40,7 @@ Each run submits a live `path_payment_strict_receive` and gives you the transact
 
 ## The problem
 
-Cross-border money transfer still settles in 1-3 days and loses 5-7% to fees plus a hidden FX spread the sender never sees.
+Cross-border money transfer still settles in 1-3 days and is expensive: the World Bank puts the global average cost of sending $200 at 6.49% in Q1 2025, against a UN Sustainable Development Goal target of 3%, plus an FX spread the sender never sees.
 
 Stellar already solves the settlement half. A single **strict-receive path payment** atomically converts one currency to another through USDC on the open DEX at near-zero cost, and Stellar's own path-finding picks the cheapest route. That part is a commodity, and we treat it as one.
 
@@ -92,7 +92,16 @@ sequenceDiagram
     H->>O: tx hash
 ```
 
-The server has no signing capability at all. That is asserted by tests on every run, which read the endpoint sources and fail if signing code reappears.
+Corra signs nothing with a user's key, and that is the invariant worth stating precisely rather than as a false absolute. **There is exactly one server-side key that touches a user's transaction: the fee-and-sponsor account.** CAP-15 fee-bump requires the fee source to sign the envelope, and CAP-33 sponsorship requires the sponsor to sign `BeginSponsoringFutureReserves`, so that signature is unavoidable if the sender is to need no XLM. It signs only fee-bump envelopes and `BeginSponsoringFutureReserves`, it pays network fees and base reserves, and it can move no user value.
+
+The CI job that enforces this is named **`no-server-side-signing`**, and it prints the exact scope it asserts so the name can never be read as broader than the check. On every run it fails the build if any of these is violated:
+
+- no module loads, derives, or signs with a key belonging to a user
+- no server response or log line contains a seed-shaped `S[A-Z2-7]{55}`
+- the fee-and-sponsor account never appears as a source or destination in any `payment` or `path_payment_*` operation
+- the fee-and-sponsor account signs nothing except fee-bump envelopes and `BeginSponsoringFutureReserves`
+
+The last two are what make the first two meaningful. A job that only asserted "no signing anywhere" would be asserting something the protocol makes impossible, and would have to be either disabled or quietly narrowed the first time sponsorship was wired up.
 
 This is not only a security posture, it is what makes the architecture legally coherent: the regulated legs (cash-in, cash-out, customer KYC) stay entirely with the licensed anchor, and Corra is an interface and an orchestrator that never touches user funds.
 
@@ -110,19 +119,18 @@ Only the on-chain leg is atomic. The cash-in and cash-out legs are slow and exte
 ```mermaid
 stateDiagram-v2
     [*] --> QUOTED
-    QUOTED --> SIGNED: sender signs (client-side)
-    SIGNED --> CASH_IN_PENDING: awaiting anchor
-    CASH_IN_PENDING --> CASH_IN_CONFIRMED: anchor credits funds
-    CASH_IN_PENDING --> FAILED: timeout / rejected
-    CASH_IN_CONFIRMED --> ONCHAIN_PENDING: submit the signed XDR
-    ONCHAIN_PENDING --> CREDITED: settles (~3s, atomic)
-    ONCHAIN_PENDING --> EXPIRED: timebound passed
-    ONCHAIN_PENDING --> REFUNDING: no route / over sendMax
-    EXPIRED --> QUOTED: sender signs again
-    REFUNDING --> QUOTED: sender refunded
-    CREDITED --> [*]: funds in recipient wallet (safe terminal)
-    FAILED --> [*]
+    QUOTED --> SIGNED: sender signs, client-side
+    SIGNED --> CASH_IN: cash-in confirmed AND verified on chain
+    SIGNED --> EXPIRED: timebound passed before cash-in
+    CASH_IN --> ONCHAIN: submit the signed XDR
+    ONCHAIN --> CREDITED: settles atomically
+    ONCHAIN --> CAP_EXCEEDED: over sendMax, nothing moved
+    CREDITED --> [*]
+    EXPIRED --> [*]
+    CAP_EXCEEDED --> [*]
 ```
+
+`EXPIRED` leaves from `SIGNED`, not from `ONCHAIN`: a transaction whose timebound passed never enters a ledger at all. `CASH_IN` is never entered on the anchor callback alone, the deposit is independently confirmed from chain state first. And the two terminal exits do not loop back, re-signing opens a **new** saga that references the old one by id, so the ledger keeps one row per signed transaction.
 
 Design notes are published in [`/docs`](docs):
 
@@ -134,6 +142,8 @@ Design notes are published in [`/docs`](docs):
 | [Ledger](docs/ledger.md) | The Postgres schema: saga state, payment legs, append-only event log. |
 | [API](docs/api.md) | The `/quote` and `/confirm` HTTP surface. |
 | [Testing](docs/testing.md) | How each leg and failure path is verified, end to end. |
+| [Risks](docs/risks.md) | Every risk carried into v1, what it costs, and what bounds it. |
+| [Demo](docs/demo.md) | What a reviewer sees, in order, and what each step proves. |
 
 ---
 
