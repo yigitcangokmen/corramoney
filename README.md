@@ -7,7 +7,7 @@
 Corra is a **non-custodial cross-border remittance app on Stellar**.
 Send local cash in one country, your recipient gets local cash in another, and nobody ever sees the word "crypto."
 
-[![Live demo](https://img.shields.io/badge/live%20demo-test.corra.money-5B3DF5)](https://test.corra.money)
+[![Try the demo](https://img.shields.io/badge/try%20the%20demo-try.corra.money-0E8546)](https://try.corra.money)
 [![Website](https://img.shields.io/badge/corra.money-0B1437)](https://corra.money)
 [![Stellar](https://img.shields.io/badge/Stellar-testnet-7B3FE4)](https://stellar.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -17,15 +17,15 @@ Send local cash in one country, your recipient gets local cash in another, and n
 
 ---
 
-## See it work first
+## Try the demo
 
-**[test.corra.money](https://test.corra.money)** runs a real Stellar testnet payment on every click. Not a mockup, not a recording:
+**[try.corra.money](https://try.corra.money)** -- deposit TRY, pick a corridor, send money, watch it settle. The full flow from cash-in to payout in four tabs.
 
 ```
-MXN 3,499.99  ->  USDC  ->  PHP 11,210      settled in seconds
+TRY 3,500  ->  USDC  ->  PHP 4,050      four corridors, one integration
 ```
 
-Each run submits a live `path_payment_strict_receive` and gives you the transaction hash to check on `stellar.expert` yourself. The verify link only appears once *that* run has a hash, so you are never shown a canned transaction as proof.
+Deposit, send across corridors (Philippines, Mexico, Europe), earn yield on idle balances, and review every step in the transaction history.
 
 **Corra's server never holds a private key.** It builds an unsigned transaction, your browser signs it, and the server only relays the signed XDR onward. Details in [Non-custodial by design](#non-custodial-by-design).
 
