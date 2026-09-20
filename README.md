@@ -2,13 +2,6 @@
 
 <img src="assets/hero.png" alt="Corra: send local cash, get local cash. Cross-border remittance on Stellar." width="100%" />
 
-<h1 align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg" />
-    <img src="assets/wordmark-light.svg" alt="Corra" width="230" />
-  </picture>
-</h1>
-
 ### Money, teleported.
 
 Corra is a **non-custodial cross-border remittance app on Stellar**.
