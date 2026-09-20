@@ -1,0 +1,36 @@
+:root{
+    --green-50:#ECFBF1; --green-100:#D2F5E0; --green-200:#A7EFC3; --green-300:#6FE3A0;
+    --green-400:#2FCB72; --green-500:#16B25E; --green-600:#12A054; --green-700:#0E8546;
+    --green-800:#0B6C39; --green-900:#06401F;
+    --n-0:#FFFFFF; --n-25:#FAFBFB; --n-50:#F4F6F6; --n-100:#E9ECEC; --n-200:#D7DCDC;
+    --n-300:#B4BDBD; --n-400:#8A9494; --n-500:#697474; --n-600:#4C5656; --n-700:#363E3E;
+    --n-800:#222929; --n-900:#121717; --n-950:#0A0E0E;
+    --brand:var(--green-700); --ink-brand:var(--green-800);
+    --weak:var(--green-50); --weak-line:var(--green-200);
+    --amber:#A85C06; --amber-weak:#FDF3E4; --amber-line:#F0CFA5;
+    --bg:var(--n-25); --surface:var(--n-0); --sunken:var(--n-50);
+    --line:var(--n-200); --line-strong:var(--n-300);
+    --text:var(--n-900); --muted:var(--n-600); --subtle:var(--n-500); --on:var(--n-0);
+    --sans:'IBM Plex Sans', system-ui, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px;
+    --sp-6:32px; --sp-7:48px; --sp-8:64px; --sp-9:96px;
+    --r-xs:4px; --r-sm:8px; --r-md:14px; --r-lg:20px; --r-full:999px;
+    --e-1:0 1px 2px rgba(18,23,23,.06), 0 0 0 1px rgba(18,23,23,.04);
+    --e-2:0 2px 6px -1px rgba(18,23,23,.08), 0 1px 2px rgba(18,23,23,.05);
+    --e-3:0 8px 20px -6px rgba(18,23,23,.12), 0 2px 6px -2px rgba(18,23,23,.06);
+  }
+  body{ margin:0; font-family:var(--sans); font-size:15px; line-height:1.6;
+    color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  a{ color:var(--ink-brand); text-decoration:none; }
+  a:hover{ color:var(--green-900); }
+  input{ font-family:inherit; }
+  button{ font-family:inherit; }
+
+  @keyframes dSpin{ to{ transform:rotate(360deg) } }
+  @keyframes dRise{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
+  @keyframes dPulse{ 0%,100%{ opacity:.35 } 50%{ opacity:1 } }
+  @keyframes dCheck{ from{ stroke-dashoffset:26 } to{ stroke-dashoffset:0 } }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0ms !important; transition-duration:0ms !important }
+  }
