@@ -1,6 +1,6 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { signTransaction } from '@stellar/freighter-api';
-import { horizon, USDC, CORRIDOR_ISSUER, NETWORK_PASSPHRASE } from './stellar';
+import { horizon, USDC, USDC_ISSUER, DIST_PUBLIC, NETWORK_PASSPHRASE } from './stellar';
 import type { Ctl } from './types';
 
 export function sndSign(ctl: Ctl) {
@@ -20,29 +20,43 @@ async function sndReal(ctl: Ctl) {
     ctl.set({ trackProg:10 });
     const a = ctl.amt('sndDigits'), c = ctl.corr();
     const usdcAmt = ctl.usdc(a);
-    const destAsset = new StellarSdk.Asset(c.cur, CORRIDOR_ISSUER);
-    const estDest = (usdcAmt * c.rate * (1 - ctl.spread)).toFixed(7);
 
     ctl.set({ trackProg:25 });
-    let destAmount = estDest;
+    let destAccount: any;
     try {
-      const paths = await horizon.strictReceivePaths(
-        [USDC], destAsset, estDest).call();
-      if (paths.records.length > 0) {
-        destAmount = paths.records[0].destination_amount;
-      }
-    } catch(e) { console.warn('Path check failed, using estimate:', e); }
+      destAccount = await horizon.loadAccount(ctl.state.addr);
+    } catch {
+      throw new Error('Recipient account not found on Stellar testnet');
+    }
+
+    const hasUsdcTrust = destAccount.balances.some((b: any) =>
+      b.asset_type !== 'native' && b.asset_code === 'USDC' && b.asset_issuer === USDC_ISSUER);
 
     ctl.set({ trackProg:40 });
     const acct = await horizon.loadAccount(ctl.state.pubkey!);
-    const sendMax = (usdcAmt * 1.05).toFixed(7);
-    const tx = new StellarSdk.TransactionBuilder(acct, {
-      fee:'100', networkPassphrase:NETWORK_PASSPHRASE
-    }).addOperation(StellarSdk.Operation.pathPaymentStrictReceive({
-      sendAsset:USDC, sendMax:sendMax,
-      destination:ctl.state.addr, destAsset:destAsset,
-      destAmount:destAmount
-    })).setTimeout(1800).build();
+    let tx: StellarSdk.Transaction;
+    let sendMode: 'usdc' | 'xlm' = 'xlm';
+
+    if (hasUsdcTrust) {
+      sendMode = 'usdc';
+      const sendAmt = (usdcAmt * (1 - ctl.spread)).toFixed(7);
+      tx = new StellarSdk.TransactionBuilder(acct, {
+        fee:'100', networkPassphrase:NETWORK_PASSPHRASE
+      }).addOperation(StellarSdk.Operation.payment({
+        destination:ctl.state.addr, asset:USDC, amount:sendAmt
+      })).setTimeout(1800).build();
+    } else {
+      sendMode = 'xlm';
+      const xlmAmt = (usdcAmt * (1 - ctl.spread)).toFixed(7);
+      const usdcBurn = (usdcAmt * (1 - ctl.spread)).toFixed(7);
+      tx = new StellarSdk.TransactionBuilder(acct, {
+        fee:'200', networkPassphrase:NETWORK_PASSPHRASE
+      }).addOperation(StellarSdk.Operation.payment({
+        destination:DIST_PUBLIC, asset:USDC, amount:usdcBurn
+      })).addOperation(StellarSdk.Operation.payment({
+        destination:ctl.state.addr, asset:StellarSdk.Asset.native(), amount:xlmAmt
+      })).setTimeout(1800).build();
+    }
 
     ctl.set({ trackProg:55 });
     const sr = await signTransaction(tx.toXDR(), { networkPassphrase:NETWORK_PASSPHRASE });
@@ -57,12 +71,14 @@ async function sndReal(ctl: Ctl) {
     clearInterval(ctl.trk);
     if (ctl.state.sendStep !== 4) return;
     const elapsed = +((Date.now() - startMs) / 1000).toFixed(1);
-    const out = usdcAmt * (1 - ctl.spread) * c.rate;
+    const outLabel = sendMode === 'usdc'
+      ? ctl.n(usdcAmt * (1 - ctl.spread), 2) + ' USDC'
+      : ctl.n(usdcAmt * (1 - ctl.spread), 4) + ' XLM';
+    const kindLabel = sendMode === 'usdc' ? 'USDC' : 'XLM';
     ctl.set((st: any) => ({
-      trackProg:100, elapsed:elapsed, sendStep:5,
-      txHash:txHash, ledger:ledger,
-      history: [{ kind:'Transfer · ' + c.cur, state:'Completed', tone:1,
-        inAmt:'MX$' + ctl.n(a, 2), outAmt:c.sym + ctl.n(out, 2),
+      trackProg:100, elapsed, sendStep:5, txHash, ledger,
+      history: [{ kind:'Transfer · ' + kindLabel, state:'Completed', tone:1,
+        inAmt:'MX$' + ctl.n(a, 2), outAmt:outLabel,
         when:ctl.stamp(), tx:txHash }].concat(st.history).slice(0, 12)
     }));
   } catch(e: any) {
