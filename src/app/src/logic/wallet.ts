@@ -1,5 +1,6 @@
 import { isConnected, requestAccess } from '@stellar/freighter-api';
-import { horizon, getBalances } from './stellar';
+import { getBalances } from './stellar';
+import { loadPositions } from './earn';
 import type { Ctl } from './types';
 
 export async function connect(ctl: Ctl) {
@@ -16,8 +17,11 @@ export async function connect(ctl: Ctl) {
     if (r.error) throw new Error(r.error);
     const pk = r.address;
     if (!ctl.state.connecting) return;
-    ctl.set({ walletMode:'freighter', pubkey:pk, connecting:false });
-    await refreshBalances(ctl);
+    const b = await getBalances(pk);
+    const usdc = parseFloat(b.USDC || '0');
+    if (!ctl.state.connecting) return;
+    const pos = loadPositions(pk);
+    ctl.set({ walletMode:'freighter', pubkey:pk, connecting:false, wallet:usdc, pos });
   } catch(e) {
     console.error('Connect failed:', e);
     if (ctl.state.connecting) ctl.set({ connecting:false });
@@ -25,7 +29,7 @@ export async function connect(ctl: Ctl) {
 }
 
 export function disconnect(ctl: Ctl) {
-  ctl.set({ walletMode:'none', pubkey:null, wallet:0, connecting:false });
+  ctl.set({ walletMode:'none', pubkey:null, wallet:0, connecting:false, pos:{} });
 }
 
 export async function refreshBalances(ctl: Ctl) {
