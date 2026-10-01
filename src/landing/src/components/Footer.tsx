@@ -8,7 +8,7 @@ export default function Footer({ v }: { v: Vals }) {
         <div style={css("max-width:1200px; margin:0 auto; padding:0 var(--sp-6); box-sizing:border-box")}>
 
           <div style={css("display:flex; align-items:center; gap:var(--sp-4); margin-bottom:var(--sp-7)")}>
-            <span style={css("flex:none; width:52px; height:52px; border-radius:50%; background:rgba(227,10,23,.14); border:1px solid rgba(227,10,23,.55); display:grid; place-items:center; font-family:var(--mono); font-size:20px; font-weight:500; color:#F26A72")}>&#8378;</span>
+            <span style={css("flex:none; width:52px; height:52px; border-radius:50%; background:rgba(0,104,71,.2); border:1px solid rgba(47,203,114,.55); display:grid; place-items:center; font-family:var(--mono); font-size:14px; font-weight:500; color:var(--green-300)")}>MX$</span>
             <svg viewBox="0 0 400 8" style={css("flex:1; min-width:0; height:8px; display:block")}>
               <path d="M0 4 H400" stroke="rgba(255,255,255,.14)" strokeWidth="2"></path>
               <path d="M0 4 H400" stroke="var(--green-400)" strokeWidth="2" strokeDasharray="5 9" style={css("animation:ftRun 2.2s linear infinite")}></path></svg>

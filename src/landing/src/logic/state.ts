@@ -4,7 +4,7 @@ export type Vals = Record<string, any>;
 
 export function deriveVals(e: number): Vals {
   const t = e % CYCLE;
-  const btw = (a, b) => t >= a && t < b;
+  const btw = (a: number, b: number) => t >= a && t < b;
 
   const listOpen = btw(T.open, T.close);
   const picked = t >= T.tick && t < T.reset;
@@ -16,10 +16,10 @@ export function deriveVals(e: number): Vals {
     ? Math.min(100, ((t - T.send) / (T.settle - T.send)) * 100)
     : (done ? 100 : 0);
 
-  const tap = k => btw(TAPS[k], TAPS[k] + 0.7);
-  const dip = k => btw(TAPS[k], TAPS[k] + 0.2) ? 'scale(.985)' : 'scale(1)';
+  const tap = (k: keyof typeof TAPS) => btw(TAPS[k], TAPS[k] + 0.7);
+  const dip = (k: keyof typeof TAPS) => btw(TAPS[k], TAPS[k] + 0.2) ? 'scale(.985)' : 'scale(1)';
 
-  const row = (i, from, to, selected) => {
+  const row = (i: number, from: number, to: number, selected: boolean) => {
     const hot = btw(from, to);
     const bg = selected && showTick ? 'var(--weak)' : hot ? 'var(--sunken)' : 'var(--surface)';
     return 'position:relative; overflow:hidden; display:flex; align-items:center;' +
@@ -31,38 +31,32 @@ export function deriveVals(e: number): Vals {
   };
 
   const status = done
-    ? { t:'\u20B14,050.02 delivered', c:'var(--ink-brand)' }
+    ? { t:'₱11,210.00 delivered', c:'var(--ink-brand)' }
     : t < T.send + 1.5 ? { t:'Contacting Coins.ph', c:'var(--muted)' }
     : t < T.settle - 0.9 ? { t:'Converting to pesos', c:'var(--muted)' }
     : { t:'Crediting the account', c:'var(--muted)' };
 
-  // routing rail · the demo's choreography: hop, shrink out, node flashes,
-  // card springs up over that node with the coin spin, card leaves, hop again.
+  // routing rail
   // wrapped off the UNWRAPPED elapsed time so nothing can jump backwards.
-  // every swap happens AT the hub. four beats, all over the USDC node:
-  // TRY.T arrives -> TRY.T -> USDC -> USDC -> PHP.T -> PHP.T leaves
+  // MXNe arrives -> MXNe -> USDC -> USDC -> PHP payout -> the anchor pays out
   const RIDE = 7;
   const r = e % RIDE;
   const R = {
-    go1:0.25, land1:1.1,         // TRY.T coin rides in, dissolves into the hub
-    swap1:1.3, swap1Off:3.05,    // card · TRY.T -> USDC
-    swap2:3.2, swap2Off:4.95,    // card · USDC -> PHP.T
-    go2:5.15, land2:6.0          // PHP.T coin rides out
+    go1:0.25, land1:1.1,
+    swap1:1.3, swap1Off:3.05,
+    swap2:3.2, swap2Off:4.95,
+    go2:5.15, land2:6.0
   };
-  const rBtw = (a, b) => r >= a && r < b;
+  const rBtw = (a: number, b: number) => r >= a && r < b;
 
   const cardOn = rBtw(R.swap1, R.swap1Off) || rBtw(R.swap2, R.swap2Off);
   const leg2 = r >= R.swap2;
 
-  const TRY_RING = 'conic-gradient(from 300deg,var(--flag-tr) 0 44%,#fff 44% 60%,var(--flag-tr) 60% 100%)';
+  const MX_RING = 'conic-gradient(from 200deg,var(--flag-mx-green) 0 50%,var(--flag-mx-red) 50% 100%)';
   const PHP_RING = 'conic-gradient(from 214deg,var(--flag-ph-blue) 0 40%,var(--flag-ph-red) 40% 80%,#fff 80% 100%)';
 
-  // the rail packet only exists on the two rides, so the lap reset is never seen
   const ride2 = r >= R.go2 - 0.12;
-  const carry = ride2 ? 'php' : 'try';
-  // the coin travels the FULL span between node centres. the overlap at each
-  // end is hidden by fading it in once it has left and out as it arrives,
-  // not by shortening the journey (that made it look stationary)
+  const carry = ride2 ? 'php' : 'mx';
   const STOP = { try: 62, hub: 190, php: 318 };
   const x = ride2
     ? (r < R.go2 ? STOP.hub : STOP.php)
@@ -73,41 +67,38 @@ export function deriveVals(e: number): Vals {
   const noTween = r < 0.18 || rBtw(R.go2 - 0.12, R.go2);
   const delivered = r >= R.land2;
 
-  // cash-in · the form arrives whole and gets filled in, then the confirmation.
-  // the reference is issued by Corra, so it is there from the start
+  // cash-in
   const CI = 8.4;
   const ci = e % CI;
-  const ciBtw = (a, b) => ci >= a && ci < b;
-  const IBAN = 'TR48 0006 2000 1230 0006 8412 77';
-  const AMT = '\u20BA3,500.00';
-  const ciType = (text, from, dur) => {
-    if (ci < from) return { s:'\u00A0', live:false, filled:false };
+  const ciBtw = (a: number, b: number) => ci >= a && ci < b;
+  const CLABE = '002 180 07012345678 9';
+  const AMT = 'MX$3,500.00';
+  const ciType = (text: string, from: number, dur: number) => {
+    if (ci < from) return { s:' ', live:false, filled:false };
     const p = Math.min(1, (ci - from) / dur);
-    return { s: text.slice(0, Math.round(p * text.length)) || '\u00A0',
+    return { s: text.slice(0, Math.round(p * text.length)) || ' ',
              live: p < 1, filled: p >= 1 };
   };
-  const ciIban = ciType(IBAN, 0.7, 1.5);
+  const ciIban = ciType(CLABE, 0.7, 1.5);
   const ciAmt = ciType(AMT, 2.6, 0.6);
   const ciTap = ciBtw(3.6, 4.3);
   const ciSending = ciBtw(3.9, 5.5);
   const ciDone = ci >= 5.5;
-  const ciField = (live, amber) =>
+  const ciField = (live: boolean, amber: boolean) =>
     'margin-top:var(--sp-2); padding:var(--sp-3) var(--sp-4); border-radius:var(--r-sm);' +
     'transition:border-color .25s linear, box-shadow .25s linear;' +
-    // the reference field reads better without a fill — amber ink and hairline only
     'background:' + (amber ? 'transparent' : 'var(--sunken)') + ';' +
     'border:1px solid ' + (live ? 'var(--brand)' : amber ? 'var(--weak-line)' : 'var(--line)') + ';' +
     'box-shadow:' + (live ? 'var(--e-focus)' : 'none') + ';';
-  const ciCaret = live =>
+  const ciCaret = (live: boolean) =>
     'display:inline-block; width:1.5px; height:1em; vertical-align:-.12em;' +
     'margin-left:2px; background:currentColor;' +
     (live ? 'animation:ciCaret .9s steps(1) infinite;' : 'opacity:0;');
 
-  // idle balance · a small figure creeping up off the same clock. deliberately
-  // no APR in large type: the story is that the money is not dead, not a rate
+  // idle balance
   const yb = 1.84 + (e % 300) * 0.0027;
 
-  // proof · the receipt slides in once per lap and then holds
+  // proof
   const prGap = e % 7.5 < 0.4;
 
   return {
@@ -117,14 +108,17 @@ export function deriveVals(e: number): Vals {
       'border:1px solid var(--weak-line); box-shadow:var(--e-2); color:var(--ink-brand);',
 
     prIn: !prGap,
-    prCoinTry: 'flex:none; width:32px; height:32px; border-radius:50%; display:grid;' +
+    prCoinMx: 'flex:none; width:32px; height:32px; border-radius:50%; display:grid;' +
       'place-items:center;' +
-      'background:conic-gradient(from 300deg,var(--flag-tr) 0 44%,#fff 44% 60%,var(--flag-tr) 60% 100%);',
+      'background:conic-gradient(from 200deg,var(--flag-mx-green) 0 50%,var(--flag-mx-red) 50% 100%);',
     prCoinPhp: 'flex:none; width:32px; height:32px; border-radius:50%; display:grid;' +
       'place-items:center;' +
       'background:conic-gradient(from 214deg,var(--flag-ph-blue) 0 40%,var(--flag-ph-red) 40% 80%,#fff 80% 100%);',
     prCoinIn: 'width:24px; height:24px; border-radius:50%; background:var(--n-0);' +
       'display:grid; place-items:center; font-family:var(--mono); font-size:12px;' +
+      'font-weight:500; color:var(--n-900);',
+    prCoinInMx: 'width:24px; height:24px; border-radius:50%; background:var(--n-0);' +
+      'display:grid; place-items:center; font-family:var(--mono); font-size:8px;' +
       'font-weight:500; color:var(--n-900);',
 
     ciForm: !ciDone, ciDone: ciDone, ciSending: ciSending,
@@ -132,8 +126,8 @@ export function deriveVals(e: number): Vals {
     ciIban: ciIban.s, ciAmt: ciAmt.s,
     ciIbanCaret: ciCaret(ciIban.live), ciAmtCaret: ciCaret(ciAmt.live),
     ciF1: ciField(ciIban.live, false),
-    ciF2: ciField(false, true),
-    ciF3: ciField(ciAmt.live, false),
+    ciF2: ciField(false, false),
+    ciF3: ciField(ciAmt.live, true),
     ciBtn: 'position:relative; overflow:hidden; margin-top:var(--sp-4); height:48px;' +
       'border-radius:var(--r-sm); display:flex; align-items:center; justify-content:center;' +
       'font-size:15px; font-weight:600; line-height:1;' +
@@ -149,7 +143,6 @@ export function deriveVals(e: number): Vals {
       'rgba(47,203,114,.05) 42%, rgba(47,203,114,0) 74%);',
 
     ybEarned: yb.toFixed(4),
-    // §09 · kuruş is exactly two digits; the second one ticks
     ybDigits: yb.toFixed(2).slice(2).split('').map((d, i) => ({
       v: d,
       style: 'display:inline-block; color:var(--text);' +
@@ -169,15 +162,11 @@ export function deriveVals(e: number): Vals {
       'background:rgba(255,255,255,.95); border:1px solid var(--weak-line);' +
       'border-radius:var(--r-md); padding:var(--sp-3) var(--sp-5) var(--sp-4); box-shadow:var(--e-2);' +
       'text-align:center; transform:translateX(-50%);' +
-      // bottom-anchored only, never with a top as well, so the card's height
-      // stays content-driven (rail y=144, node top edge y=122, 14px clear)
       'left:50%; bottom:144px;' +
       'animation:rtCard .34s var(--ease-out) both;',
-    // the coin spins in as part of the card's own entrance
     rtHitHub: cardOn, rtHitEnd: cardOn,
     rtArrow1: 'animation:rtPulse .8s ease-in-out both;',
     rtArrow2: 'animation:rtPulse .8s ease-in-out both;',
-    // the hub rings out as each swap clears; PHP.T rings as the value lands
     rtFlash1: rBtw(R.swap1, R.swap1 + 1.2) || rBtw(R.swap2, R.swap2 + 1.2),
     rtFlash2: rBtw(R.land2, R.land2 + 1.2),
 
@@ -188,21 +177,20 @@ export function deriveVals(e: number): Vals {
       'transform:translate(-50%,-50%) scale(' + (delivered ? '1.08' : '1') + ');' +
       'transition:transform .5s var(--ease-out), box-shadow .5s linear;',
 
-    rtPacketGlyph: carry === 'php' ? '\u20B1' : '\u20BA',
+    rtPacketGlyph: carry === 'php' ? '₱' : 'MX$',
     rtPacketInner: 'width:31px; height:31px; border-radius:50%; display:grid;' +
-      'place-items:center; font-family:var(--mono); font-weight:500; font-size:15px;' +
+      'place-items:center; font-family:var(--mono); font-weight:500;' +
+      'font-size:' + (carry === 'php' ? '15px' : '10.5px') + ';' +
       'background:var(--n-0); color:var(--n-900);',
     rtPacketStyle: 'position:absolute; top:144px; width:40px; height:40px;' +
       'margin:-20px 0 0 -20px; border-radius:50%; display:grid; place-items:center;' +
       'box-shadow:var(--e-2); z-index:4;' +
       'left:' + x / 380 * 100 + '%;' +
-      'background:' + (carry === 'php' ? PHP_RING : TRY_RING) + ';' +
+      'background:' + (carry === 'php' ? PHP_RING : MX_RING) + ';' +
       'opacity:' + (gone ? '0' : '1') + ';' +
       'transform:scale(' + (shrink ? '.55' : '1') + ');' +
       (noTween
         ? 'transition:none;'
-        // a gentler curve than the old ease-in-out, which braked hard at both
-        // ends and made the ride read as stalling
         : 'transition:left .8s cubic-bezier(.3,.1,.32,1), opacity .22s linear,' +
           'transform .26s cubic-bezier(.16,1,.3,1), background .3s linear;'),
 

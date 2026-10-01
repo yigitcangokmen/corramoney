@@ -9,7 +9,8 @@
     --weak:var(--green-50); --weak-line:var(--green-200);
     --amber:#A85C06; --amber-weak:#FDF3E4; --amber-line:#F0CFA5;
     /* varlık renkleri · marka paleti değil, gerçek para/kurum işaretleri */
-    --flag-tr:#E30A17; --flag-ph-blue:#0038A8; --flag-ph-red:#CE1126; --asset-usdc:#2775CA;
+    --flag-tr:#E30A17; --flag-mx-green:#006847; --flag-mx-red:#CE1126;
+    --flag-ph-blue:#0038A8; --flag-ph-red:#CE1126; --asset-usdc:#2775CA;
     --bg:var(--n-25); --surface:var(--n-0); --sunken:var(--n-50);
     --line:var(--n-200); --line-strong:var(--n-300);
     --text:var(--n-900); --muted:var(--n-600); --subtle:var(--n-500); --on:var(--n-0);
@@ -91,31 +92,6 @@
   @keyframes rtCard{ 0%{ opacity:0; transform:translateX(-50%) scale(.6) }
     100%{ opacity:1; transform:translateX(-50%) scale(1) } }
 
-  @keyframes spin{ to{ transform:rotate(360deg) } }
-
-  /* ── cash-in · form fills in, then the confirmation lands ── */
-  @keyframes ciIn{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
-
-  /* ── proof · the receipt assembles itself, piece by piece ── */
-  @keyframes prCard{ from{ opacity:0; transform:translateY(16px) scale(.97) }
-    to{ opacity:1; transform:none } }
-  @keyframes prRow{ from{ opacity:0; transform:translateY(7px) } to{ opacity:1; transform:none } }
-  @keyframes prStamp{ from{ opacity:0; transform:scale(.7) } to{ opacity:1; transform:scale(1) } }
-  @keyframes prLand{ from{ opacity:0; transform:translateY(-6px) scale(1.12) }
-    to{ opacity:1; transform:none } }
-  @keyframes prRing{ from{ opacity:.85; transform:scale(1) } to{ opacity:0; transform:scale(3.2) } }
-  @keyframes prBar{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }
-  @keyframes prSheen{ 0%{ opacity:0; transform:translateX(-120%) } 14%{ opacity:1 }
-    82%{ opacity:1; transform:translateX(320%) } 100%{ opacity:0; transform:translateX(320%) } }
-  @keyframes ciFade{ from{ opacity:0 } to{ opacity:1 } }
-  @keyframes ciCaret{ 50%{ opacity:0 } }
-  @keyframes ciRipple{ from{ opacity:.4; transform:translate(-50%,-50%) scale(.2) }
-    to{ opacity:0; transform:translate(-50%,-50%) scale(1) } }
-  @keyframes ciCheck{ from{ stroke-dashoffset:26 } to{ stroke-dashoffset:0 } }
-  @keyframes ciRing{ from{ opacity:.8; transform:scale(1) } to{ opacity:0; transform:scale(3.8) } }
-  @keyframes ciGlow{ from{ opacity:0 } to{ opacity:1 } }
-  @keyframes ciSheen{ 0%{ opacity:0; transform:translateX(-120%) } 14%{ opacity:1 }
-    82%{ opacity:1; transform:translateX(320%) } 100%{ opacity:0; transform:translateX(320%) } }
   @keyframes route-dash{ to{ stroke-dashoffset:-22 } }
   @keyframes tick-up{
     0%,20%{ opacity:0; transform:translateY(6px) } 30%,100%{ opacity:1; transform:none }
@@ -126,7 +102,7 @@
   /* ── hero + corridors ── */
   @keyframes heroCaret{ 50%{ opacity:0 } }
   /* hero · local money arrives and leaves, one shared 12s clock so the order
-     TRY in -> MX$ out -> EUR in -> PHP out can never drift */
+     R$ in -> MX$ out -> AR$ in -> PHP out can never drift */
   @keyframes lmBreathe{ 0%,100%{ transform:scale(1); opacity:.92 }
     50%{ transform:scale(1.03); opacity:1 } }
   @keyframes lmEmit{
@@ -151,6 +127,10 @@
     76%{ opacity:1; transform:rotate(var(--a)) translateX(98px) scale(1) }
     97%{ opacity:1; transform:rotate(var(--a)) translateX(176px) scale(1) }
     100%{ opacity:0; transform:rotate(var(--a)) translateX(176px) scale(1) } }
+  @keyframes lmSway3{ 0%,100%{ transform:rotateX(10deg) rotateY(-12deg) }
+    50%{ transform:rotateX(6deg) rotateY(12deg) } }
+  @keyframes lmIntake{ 0%,18%{ transform:scale(1) } 21%{ transform:scale(1.06) } 26%,71%{ transform:scale(1) }
+    74%{ transform:scale(1.06) } 79%,100%{ transform:scale(1) } }
   @keyframes corDraw{ to{ stroke-dashoffset:0 } }
   @keyframes corTravel{ 0%{ offset-distance:0% } 100%{ offset-distance:100% } }
   @keyframes heroDot{ 0%,100%{ opacity:.35 } 50%{ opacity:1 } }

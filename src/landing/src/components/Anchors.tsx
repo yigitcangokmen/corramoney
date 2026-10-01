@@ -11,8 +11,11 @@ export default function Anchors({ v }: { v: Vals }) {
 
                   <div style={css("background:var(--surface); border:1px dashed var(--line-strong); border-radius:var(--r-md); padding:var(--sp-5)")}>
                     <div style={css("font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--n-600)")}>Before</div>
-                    <div style={css("margin-top:var(--sp-4); display:flex; gap:var(--sp-2)")}>
+                    <div style={css("margin-top:var(--sp-4); display:flex; gap:var(--sp-2); flex-wrap:wrap")}>
                       <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); border:1.5px solid var(--line-strong); font-family:var(--mono); font-size:12px; font-weight:500; color:var(--n-700)")}>MXN</span>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); border:1.5px dashed var(--line-strong); font-family:var(--mono); font-size:16px; color:var(--n-500)")}>+</span>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); border:1.5px dashed var(--line-strong); font-family:var(--mono); font-size:16px; color:var(--n-500)")}>+</span>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); border:1.5px dashed var(--line-strong); font-family:var(--mono); font-size:16px; color:var(--n-500)")}>+</span>
                       <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); border:1.5px dashed var(--line-strong); font-family:var(--mono); font-size:16px; color:var(--n-500)")}>+</span>
                       <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); border:1.5px dashed var(--line-strong); font-family:var(--mono); font-size:16px; color:var(--n-500)")}>+</span></div>
                   </div>
@@ -25,10 +28,13 @@ export default function Anchors({ v }: { v: Vals }) {
 
                   <div style={css("background:var(--surface); border:1px solid var(--weak-line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-2)")}>
                     <div style={css("font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-brand)")}>After</div>
-                    <div style={css("margin-top:var(--sp-4); display:flex; gap:var(--sp-2)")}>
+                    <div style={css("margin-top:var(--sp-4); display:flex; gap:var(--sp-2); flex-wrap:wrap")}>
                       <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>MXN</span>
                       <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>PHP</span>
-                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>TRY</span></div>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>IDR</span>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>THB</span>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>BRL</span>
+                      <span style={css("display:grid; place-items:center; width:54px; height:54px; border-radius:var(--r-sm); background:var(--brand); color:var(--on); font-family:var(--mono); font-size:12px; font-weight:500")}>ARS</span></div>
                   </div>
                 </div>
               </div>
@@ -39,7 +45,7 @@ export default function Anchors({ v }: { v: Vals }) {
                 <p style={css("margin:var(--sp-4) 0 0; font-size:17px; color:var(--muted); max-width:380px")}>
                   An anchor arrives with the one market its licence covers. One adapter later it can
                   serve every corridor on the rail, and the ones we add after that cost it nothing.</p>
-                <a href="Corra For Anchors.dc.html" style={css("margin-top:var(--sp-6); display:inline-flex; align-items:center; gap:var(--sp-2); font-size:15px; font-weight:600; color:var(--ink-brand)")}>
+                <a href="#" style={css("margin-top:var(--sp-6); display:inline-flex; align-items:center; gap:var(--sp-2); font-size:15px; font-weight:600; color:var(--ink-brand)")}>
                   Corra for anchors
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h13M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"></path></svg></a>

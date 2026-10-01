@@ -14,13 +14,12 @@ export default function Corridors({ v }: { v: Vals }) {
                 direction.</h2>
             </div>
             <p style={css("margin:0; font-size:17px; color:var(--muted); max-width:360px")}>
-              Every corridor is a work in progress. These are the four we are building, and how far
+              Every corridor is a work in progress. These are the six we are building, and how far
               along each one is.</p>
           </div>
 
           <div style={css("position:relative; margin-bottom:var(--sp-6); background:var(--bg); border:1px solid var(--line); border-radius:var(--r-lg); padding:var(--sp-6)")}>
             <svg viewBox="0 0 1180 200" width="100%" height="200">
-              
               <path d="M 80 140 Q 340 34 552 56" stroke="var(--brand)" strokeWidth="2.5" fill="none" strokeDasharray="620" strokeDashoffset="620" style={css("animation:corDraw 1.6s cubic-bezier(.2,.8,.3,1) .3s forwards")}></path>
               <path d="M 628 56 Q 840 34 1100 140" stroke="var(--brand)" strokeWidth="2.5" fill="none" strokeDasharray="620" strokeDashoffset="620" style={css("animation:corDraw 1.6s cubic-bezier(.2,.8,.3,1) 1.5s forwards")}></path>
               <circle r="8" fill="var(--brand)" style={css("offset-path:path('M 80 140 Q 340 34 552 56'); animation:corTravel 3s cubic-bezier(.2,.8,.3,1) 1s infinite")}></circle>
@@ -29,7 +28,6 @@ export default function Corridors({ v }: { v: Vals }) {
               <text x="80" y="176" textAnchor="middle" fontSize="12" fill="var(--muted)" fontFamily="IBM Plex Mono" letterSpacing="1.4">MX</text>
               <circle cx="1100" cy="140" r="13" fill="var(--brand)"></circle>
               <text x="1100" y="176" textAnchor="middle" fontSize="12" fill="var(--muted)" fontFamily="IBM Plex Mono" letterSpacing="1.4">PH</text>
-              
               <g style={css("transform-origin:590px 56px; animation:corJoin 6s ease-in-out infinite")}>
                 <circle cx="590" cy="56" r="30" fill="var(--brand)"></circle>
                 <path d="M82 24a36 36 0 100 52L62 60a14 14 0 110-20z" fill="var(--n-0)" transform="translate(575.04 41.5) scale(0.29)"></path>
@@ -38,7 +36,8 @@ export default function Corridors({ v }: { v: Vals }) {
             </svg>
           </div>
 
-          <div style={css("display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:var(--sp-4)")}>
+          <div style={css("display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:var(--sp-4)")}>
+            {/* Mexico - progress bar */}
             <div style={css("background:var(--surface); border:1px solid var(--weak-line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-1)")}>
               <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--text)")}>MX</div>
               <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Mexico</div>
@@ -47,6 +46,7 @@ export default function Corridors({ v }: { v: Vals }) {
               <div style={css(v.corTrack)}><div style={css(v.corFill35)}></div></div>
               <div style={css(v.corNote)}>In progress &middot; anchor talks</div>
             </div>
+            {/* Philippines - progress bar */}
             <div style={css("background:var(--surface); border:1px solid var(--weak-line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-1)")}>
               <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--text)")}>PH</div>
               <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Philippines</div>
@@ -55,27 +55,51 @@ export default function Corridors({ v }: { v: Vals }) {
               <div style={css(v.corTrack)}><div style={css(v.corFill35)}></div></div>
               <div style={css(v.corNote)}>In progress &middot; anchor talks</div>
             </div>
+            {/* Brazil - dot */}
             <div style={css("background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-1)")}>
-              <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--muted)")}>TR</div>
-              <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Türkiye</div>
-              <div style={css("font-size:13.5px; color:var(--muted); margin-top:var(--sp-1)")}>TRY &middot;
-                anchor outreach</div>
-              <div style={css(v.corTrack)}><div style={css(v.corFill25)}></div></div>
-              <div style={css(v.corNote)}>In progress &middot; anchor talks</div>
+              <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--muted)")}>BR</div>
+              <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Brazil</div>
+              <div style={css("font-size:13.5px; color:var(--muted); margin-top:var(--sp-1)")}>BRL &middot;
+                anchor research</div>
+              <div style={css("margin-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-2)")}>
+                <span style={css("width:7px; height:7px; border-radius:50%; background:var(--n-400)")}></span>
+                <span style={css(v.corNote + " margin-top:0")}>Researching</span></div>
             </div>
-            <div style={css("background:var(--n-900); color:var(--n-0); border-radius:var(--r-md); padding:var(--sp-5)")}>
-              <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--green-300)")}>ID &middot; TH</div>
-              <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Next</div>
-              <div style={css("font-size:13.5px; color:var(--n-300); margin-top:var(--sp-1)")}>IDR, THB
-                &middot; anchor selection</div>
-              <div style={css(v.corTrackDark)}><div style={css(v.corFill15)}></div></div>
-              <div style={css(v.corNoteDark)}>In progress &middot; scoping</div>
+            {/* Argentina - dot */}
+            <div style={css("background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-1)")}>
+              <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--muted)")}>AR</div>
+              <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Argentina</div>
+              <div style={css("font-size:13.5px; color:var(--muted); margin-top:var(--sp-1)")}>ARS &middot;
+                anchor research</div>
+              <div style={css("margin-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-2)")}>
+                <span style={css("width:7px; height:7px; border-radius:50%; background:var(--n-400)")}></span>
+                <span style={css(v.corNote + " margin-top:0")}>Researching</span></div>
+            </div>
+            {/* Indonesia - dot */}
+            <div style={css("background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-1)")}>
+              <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--muted)")}>ID</div>
+              <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Indonesia</div>
+              <div style={css("font-size:13.5px; color:var(--muted); margin-top:var(--sp-1)")}>IDR &middot;
+                single issuer</div>
+              <div style={css("margin-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-2)")}>
+                <span style={css("width:7px; height:7px; border-radius:50%; background:var(--n-400)")}></span>
+                <span style={css(v.corNote + " margin-top:0")}>Researching</span></div>
+            </div>
+            {/* Thailand - dot */}
+            <div style={css("background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-1)")}>
+              <div style={css("font-family:var(--mono); font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:.04em; color:var(--muted)")}>TH</div>
+              <div style={css("margin-top:var(--sp-3); font-weight:600; font-size:19px")}>Thailand</div>
+              <div style={css("font-size:13.5px; color:var(--muted); margin-top:var(--sp-1)")}>THB &middot;
+                single issuer</div>
+              <div style={css("margin-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-2)")}>
+                <span style={css("width:7px; height:7px; border-radius:50%; background:var(--n-400)")}></span>
+                <span style={css(v.corNote + " margin-top:0")}>Researching</span></div>
             </div>
           </div>
 
           <div style={css("margin-top:var(--sp-4); padding:var(--sp-4) var(--sp-5); background:var(--bg); border:1px dashed var(--line-strong); border-radius:var(--r-md); display:flex; align-items:center; gap:var(--sp-5); flex-wrap:wrap")}>
             <span style={css("font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>On the map</span>
-            <span style={css("font-family:var(--mono); font-size:13.5px; color:var(--muted); letter-spacing:.06em")}>BRL &middot; INR &middot; NGN &middot; KES</span>
+            <span style={css("font-family:var(--mono); font-size:13.5px; color:var(--muted); letter-spacing:.06em")}>INR &middot; NGN &middot; KES</span>
           </div>
         </div>
       </div>

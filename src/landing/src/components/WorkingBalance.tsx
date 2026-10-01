@@ -9,20 +9,18 @@ export default function WorkingBalance({ v }: { v: Vals }) {
               <div style={css("order:2; background:var(--sunken); border-left:1px solid var(--line); min-height:352px; display:flex; align-items:center; justify-content:center; padding:var(--sp-6)")}>
                 <div style={css("width:100%; max-width:348px; display:flex; flex-direction:column; gap:var(--sp-4)")}>
 
-                  
                   <div style={css("background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:var(--sp-5); color:var(--n-500)")}>
                     <div style={css("display:flex; justify-content:space-between; align-items:baseline; gap:var(--sp-4)")}>
                       <span style={css("font-size:16px")}>Bank account</span>
-                      <span style={css("font-family:var(--mono); font-size:20px")}>&#8378;3,500.00</span></div>
+                      <span style={css("font-family:var(--mono); font-size:20px")}>MX$3,500.00</span></div>
                     <div style={css("margin-top:var(--sp-2); font-size:14px")}>unchanged since Monday</div>
                   </div>
 
-                  
                   <div style={css("background:var(--surface); border:1px solid var(--weak-line); border-radius:var(--r-md); padding:var(--sp-5); box-shadow:var(--e-2)")}>
                     <div style={css("display:flex; justify-content:space-between; align-items:baseline; gap:var(--sp-4)")}>
                       <span style={css("font-size:16px; font-weight:600")}>Corra balance</span>
                       <span style={css("display:inline-flex; align-items:baseline; font-family:var(--mono); font-size:20px; font-weight:500; font-variant-numeric:tabular-nums")}>
-                        <span>&#8378;3,501.</span>
+                        <span>MX$3,501.</span>
                         {(v.ybDigits || []).map((d: any, id: number) => (<React.Fragment key={id}>
                           <span style={css(d.style)}>{d.v}</span>
                         </React.Fragment>))}</span>

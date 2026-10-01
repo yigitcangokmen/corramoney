@@ -14,15 +14,15 @@ export default function Proof({ v }: { v: Vals }) {
 
                   <div style={css("padding:var(--sp-4); border-bottom:1px solid var(--line); text-align:center")}>
                     <div style={css("font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); animation:prRow .5s cubic-bezier(.16,1,.3,1) .35s both")}>Your transfer</div>
-                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:22px; font-weight:500; letter-spacing:.04em; animation:prStamp .55s var(--ease-out) .5s both")}>CORRA&#8209;8412&#8209;TRY</div>
+                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:22px; font-weight:500; letter-spacing:.04em; animation:prStamp .55s var(--ease-out) .5s both")}>CORRA&#8209;8412&#8209;MXN</div>
                   </div>
 
                   <div style={css("padding:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3)")}>
                     <div style={css("display:flex; align-items:center; gap:var(--sp-3); animation:prRow .5s cubic-bezier(.16,1,.3,1) .85s both")}>
-                      <span style={css(v.prCoinTry)}><span style={css(v.prCoinIn)}>&#8378;</span></span>
+                      <span style={css(v.prCoinMx)}><span style={css(v.prCoinInMx)}>MX$</span></span>
                       <span style={css("min-width:0; flex:1")}>
-                        <span style={css("display:block; font-size:13.5px; font-weight:500")}>Emre sent</span>
-                        <span style={css("display:block; font-family:var(--mono); font-size:13px; color:var(--muted)")}>&#8378;3,500.00</span></span>
+                        <span style={css("display:block; font-size:13.5px; font-weight:500")}>Diego sent</span>
+                        <span style={css("display:block; font-family:var(--mono); font-size:13px; color:var(--muted)")}>MX$3,500.00</span></span>
                     </div>
                     <div style={css("display:flex; align-items:center; gap:var(--sp-3); animation:prRow .5s cubic-bezier(.16,1,.3,1) 1.25s both")}>
                       <span style={css("position:relative; flex:none; display:block")}>
@@ -31,7 +31,7 @@ export default function Proof({ v }: { v: Vals }) {
                       </span>
                       <span style={css("min-width:0; flex:1")}>
                         <span style={css("display:block; font-size:13.5px; font-weight:500")}>Maria received</span>
-                        <span style={css("display:block; font-family:var(--mono); font-size:13px; color:var(--ink-brand); animation:prLand .6s var(--ease-out) 1.5s both")}>&#8369;4,050.02</span></span>
+                        <span style={css("display:block; font-family:var(--mono); font-size:13px; color:var(--ink-brand); animation:prLand .6s var(--ease-out) 1.5s both")}>&#8369;11,210.00</span></span>
                     </div>
                   </div>
 

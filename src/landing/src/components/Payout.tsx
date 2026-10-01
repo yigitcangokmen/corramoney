@@ -81,7 +81,7 @@ export default function Payout({ v }: { v: Vals }) {
                   <div style={css(v.pvAmt)}>
                     <div style={css("display:flex; justify-content:space-between; gap:var(--sp-3); font-size:13px; padding:var(--sp-3) 0; border-bottom:1px solid var(--line)")}>
                       <span style={css("color:var(--muted)")}>Amount</span>
-                      <span style={css("font-family:var(--mono); font-weight:500")}>&#8369;4,050.02</span></div>
+                      <span style={css("font-family:var(--mono); font-weight:500")}>&#8369;11,210.00</span></div>
                     <div style={css("display:flex; justify-content:space-between; gap:var(--sp-3); font-size:13px; padding:var(--sp-3) 0")}>
                       <span style={css("color:var(--muted)")}>Arrives</span>
                       <span style={css("font-family:var(--mono)")}>seconds &middot; InstaPay</span></div>
@@ -98,7 +98,7 @@ export default function Payout({ v }: { v: Vals }) {
                       </>) : null}
 
                       {v.pvIdle ? (<>
-                        <span style={css("display:flex; align-items:center; justify-content:center")}>Withdraw &#8369;4,050.02</span>
+                        <span style={css("display:flex; align-items:center; justify-content:center")}>Withdraw &#8369;11,210.00</span>
                       </>) : null}
                       {v.pvSending ? (<>
                         <span style={css("display:flex; align-items:center; justify-content:center; gap:var(--sp-3); animation:pvFade .25s linear both")}>

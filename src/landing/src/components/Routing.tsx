@@ -10,7 +10,8 @@ export default function Routing({ v }: { v: Vals }) {
                 <div style={css("font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--n-600)")}>03</div>
                 <h3 style={css("margin:var(--sp-3) 0 0; font-size:32px; font-weight:600; letter-spacing:-.02em; line-height:1.14")}>Routing</h3>
                 <p style={css("margin:var(--sp-4) 0 0; font-size:17px; color:var(--muted); max-width:380px")}>
-                  Once your lira is on Stellar it reaches the peso token through a dollar-pegged asset,
+                  Your pesos arrive on Stellar as MXNe, cross through a dollar-pegged asset, and a Philippine
+                  anchor pays out the other side in pesos,
                   priced at the moment you confirm. One operation, one signature: either the full
                   amount lands or nothing moves.</p>
                 <a href="#" style={css("margin-top:var(--sp-6); display:inline-flex; align-items:center; gap:var(--sp-2); font-size:15px; font-weight:600; color:var(--ink-brand)")}>
@@ -22,14 +23,13 @@ export default function Routing({ v }: { v: Vals }) {
               <div style={css("background:var(--sunken); border-left:1px solid var(--line); min-height:352px; display:flex; align-items:center; justify-content:center; padding:var(--sp-6); overflow:hidden")}>
                 <div style={css("position:relative; width:100%; max-width:380px; height:252px")}>
 
-                  
                   {v.rtCardOn ? (<>
                   <div style={css(v.rtCardStyle)}>
                     {v.rtLeg1 ? (<>
-                      <div style={css("font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.12em; color:var(--muted); font-size:10.5px")}>TRY.T -&gt; USDC</div>
+                      <div style={css("font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.12em; color:var(--muted)")}>MXNe -&gt; USDC</div>
                       <div style={css("margin-top:var(--sp-2); height:34px; display:flex; align-items:center; justify-content:center; gap:var(--sp-3)")}>
-                        <span style={css("width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center; animation:rtPop .38s cubic-bezier(.5,.05,.3,1) both; background:conic-gradient(from 300deg,var(--flag-tr) 0 44%,#fff 44% 60%,var(--flag-tr) 60% 100%)")}>
-                          <span style={css("width:26px; height:26px; border-radius:50%; background:var(--n-0); display:grid; place-items:center; font-family:var(--mono); font-size:13px; font-weight:500; color:var(--n-900)")}>&#8378;</span></span>
+                        <span style={css("width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center; animation:rtPop .38s cubic-bezier(.5,.05,.3,1) both; background:conic-gradient(from 200deg,var(--flag-mx-green) 0 50%,var(--flag-mx-red) 50% 100%)")}>
+                          <span style={css("width:26px; height:26px; border-radius:50%; background:var(--n-0); display:grid; place-items:center; font-family:var(--mono); font-size:9px; font-weight:500; color:var(--n-900)")}>MX$</span></span>
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={css("color:var(--ink-brand); flex:none; " + v.rtArrow1)}>
                           <path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                         <span style={css("width:34px; height:34px; flex:none; display:block")}>
@@ -46,7 +46,7 @@ export default function Routing({ v }: { v: Vals }) {
                     </>) : null}
 
                     {v.rtLeg2 ? (<>
-                      <div style={css("font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.12em; color:var(--muted); font-size:10.5px")}>USDC -&gt; PHP.T</div>
+                      <div style={css("font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.12em; color:var(--muted)")}>USDC -&gt; PHP payout</div>
                       <div style={css("margin-top:var(--sp-2); height:34px; display:flex; align-items:center; justify-content:center; gap:var(--sp-3)")}>
                         <span style={css("width:34px; height:34px; flex:none; display:block; animation:rtPop .38s cubic-bezier(.5,.05,.3,1) both")}>
                           <svg viewBox="0 0 2000 2000" style={css("width:100%; height:100%; display:block")}>
@@ -72,23 +72,22 @@ export default function Routing({ v }: { v: Vals }) {
                     <path d="M62 144 H318" stroke="var(--brand)" strokeWidth="1.8" fill="none" strokeDasharray="5 6" style={css("animation:route-dash 1.4s linear infinite")}></path>
                   </svg>
 
-                  
                   <div style={css(v.rtPacketStyle)}>
                     <span style={css(v.rtPacketInner)}>{v.rtPacketGlyph}</span></div>
 
-                  
-                  <div style={css("position:absolute; left:62px; top:144px; transform:translate(-50%,-50%); width:40px; height:40px; border-radius:50%; display:grid; place-items:center; box-shadow:var(--e-2); background:conic-gradient(from 300deg,var(--flag-tr) 0 44%,#fff 44% 60%,var(--flag-tr) 60% 100%)")}>
-                    <span style={css("width:31px; height:31px; border-radius:50%; background:var(--n-0); display:grid; place-items:center; font-family:var(--mono); font-size:15px; font-weight:500; color:var(--n-900)")}>&#8378;</span>
+                  {/* MXNe node */}
+                  <div style={css("position:absolute; left:62px; top:144px; transform:translate(-50%,-50%); width:40px; height:40px; border-radius:50%; display:grid; place-items:center; box-shadow:var(--e-2); background:conic-gradient(from 200deg,var(--flag-mx-green) 0 50%,var(--flag-mx-red) 50% 100%)")}>
+                    <span style={css("width:31px; height:31px; border-radius:50%; background:var(--n-0); display:grid; place-items:center; font-family:var(--mono); font-size:10.5px; font-weight:500; color:var(--n-900)")}>MX$</span>
                   </div>
                   <div style={css("position:absolute; left:62px; top:174px; transform:translateX(-50%); text-align:center; white-space:nowrap")}>
-                    <div style={css("font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.06em")}>TRY.T</div>
-                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:10.5px; color:var(--muted)")}>&#8378;3,500.00</div>
+                    <div style={css("font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.06em")}>MXNe</div>
+                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:10.5px; color:var(--muted)")}>MX$3,500.00</div>
                   </div>
 
-                  
+                  {/* USDC hub */}
                   <div style={css("position:absolute; left:190px; top:174px; transform:translateX(-50%); text-align:center; white-space:nowrap")}>
                     <div style={css("font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.06em")}>USDC</div>
-                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:10.5px; color:var(--muted)")}>71.6 USDC</div>
+                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:10.5px; color:var(--muted)")}>190.2 USDC</div>
                   </div>
                   <div style={css("position:absolute; left:190px; top:144px; transform:translate(-50%,-50%); width:44px; height:44px; border-radius:50%; box-shadow:var(--e-2)")}>
                     {v.rtFlash1 ? (<>
@@ -102,7 +101,7 @@ export default function Routing({ v }: { v: Vals }) {
                       </svg></span>
                   </div>
 
-                  
+                  {/* PHP payout node */}
                   <div style={css("position:absolute; left:318px; top:144px; transform:translate(-50%,-50%); width:40px; height:40px; border-radius:50%; display:grid; place-items:center; box-shadow:var(--e-2); background:conic-gradient(from 214deg,var(--flag-ph-blue) 0 40%,var(--flag-ph-red) 40% 80%,#fff 80% 100%)")}>
                     {v.rtFlash2 ? (<>
                       <span style={css("position:absolute; inset:-8px; border-radius:50%; border:1px solid var(--weak-line); pointer-events:none; animation:rtFlash .6s ease-out 2 both")}></span>
@@ -110,11 +109,10 @@ export default function Routing({ v }: { v: Vals }) {
                     <span style={css("width:31px; height:31px; border-radius:50%; background:var(--n-0); display:grid; place-items:center; font-family:var(--mono); font-size:15px; font-weight:500; color:var(--n-900)")}>&#8369;</span>
                   </div>
                   <div style={css("position:absolute; left:318px; top:174px; transform:translateX(-50%); text-align:center; white-space:nowrap")}>
-                    <div style={css("font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.06em")}>PHP.T</div>
-                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:10.5px; color:var(--muted)")}>&#8369;4,050.02</div>
+                    <div style={css("font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.06em")}>PHP payout</div>
+                    <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:10.5px; color:var(--muted)")}>&#8369;11,210.00</div>
                   </div>
 
-                  <div style={css("position:absolute; left:50%; bottom:0; transform:translateX(-50%); font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:var(--n-600); white-space:nowrap")}>ONE OPERATION &middot; ~5 S</div>
                 </div>
               </div>
             </div>
