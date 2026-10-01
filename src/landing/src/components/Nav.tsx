@@ -12,7 +12,7 @@ export default function Nav({ v }: { v: Vals }) {
             <span style={css("font-weight:600; letter-spacing:-.02em; line-height:1")}>Corra</span>
           </div>
           <div style={css("margin-left:auto; display:flex; align-items:center; gap:var(--sp-3)")}>
-            <a href="mailto:hi@corra.money" style={css("display:inline-flex; align-items:center; font-size:14px; font-weight:600; padding:var(--sp-3) var(--sp-5); border-radius:var(--r-sm); background:var(--brand); color:var(--on)")}>Request access</a>
+            <a href="https://app.corra.money" style={css("display:inline-flex; align-items:center; font-size:14px; font-weight:600; padding:var(--sp-3) var(--sp-5); border-radius:var(--r-sm); background:var(--brand); color:var(--on)")}>Launch app</a>
           </div>
         </div>
       </div>
