@@ -10,7 +10,7 @@ export default function SigningSheet({ v }: { v: Vals }) {
               <div style={css("padding:var(--sp-4) var(--sp-5); border-bottom:1px solid var(--line); display:flex; align-items:center; gap:var(--sp-3)")}>
                 <span style={css("display:grid; place-items:center; width:26px; height:26px; border-radius:var(--r-xs); background:var(--n-900); color:var(--n-0); font-family:var(--mono); font-size:11px; font-weight:500")}>W</span>
                 <span style={css("font-size:14.5px; font-weight:600")}>Wallet</span>
-                <span style={css("margin-left:auto; font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--subtle)")}>Mock &middot; testnet</span>
+                <span style={css("margin-left:auto; font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--subtle)")}>{v.walletTag}</span>
               </div>
 
               {v.signAsk ? (<>

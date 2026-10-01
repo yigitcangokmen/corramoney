@@ -26,10 +26,6 @@ export default function TopBar({ v }: { v: Vals }) {
           </>
         ) : (
           <>
-            <div style={css("text-align:right")}>
-              <div style={css("font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>Wallet</div>
-              <div style={css("font-family:var(--mono); font-size:14px; font-weight:500; font-variant-numeric:tabular-nums")}>{v.walletLabel}</div>
-            </div>
             <button onClick={v.doConnectDemo} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--brand); color:var(--on); border:none; border-radius:var(--r-sm); cursor:pointer")}>{v.connectLabel}</button>
             {v.hasFreighter ? (
               <button onClick={v.doConnectFreighter} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Freighter</button>

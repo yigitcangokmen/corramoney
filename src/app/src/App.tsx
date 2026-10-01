@@ -23,7 +23,7 @@ const INITIAL: AppState = {
   elapsed:0, trackProg:0, sndRef:8412, saga:'cfbd94bf', txHash:'', ledger:0,
   pos:{}, vaultDigits:'', vaultPick:'blend',
   sign:null, signState:'ask',
-  wallet:270.70,
+  wallet:0,
   history:[],
   walletMode:'none', pubkey:null, secretKey:null, connecting:false
 };

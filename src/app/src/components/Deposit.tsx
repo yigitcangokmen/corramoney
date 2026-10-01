@@ -45,7 +45,7 @@ export default function Deposit({ v }: { v: Vals }) {
           <div style={css("margin-top:var(--sp-5); padding:var(--sp-4); background:var(--sunken); border:1px solid var(--line); border-radius:var(--r-sm)")}>
             <div style={css("font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>CLABE</div>
             <div style={css("margin-top:var(--sp-1); font-family:var(--mono); font-size:14px; font-weight:500; word-break:break-all")}>002 180 07012345678 9</div>
-            <div style={css("margin-top:var(--sp-2); font-size:13px; color:var(--muted)")}>Etherfuse MX &middot; SPEI &middot; mock anchor (testnet)</div>
+            <div style={css("margin-top:var(--sp-2); font-size:13px; color:var(--muted)")}>Etherfuse MX &middot; SPEI &middot; testnet anchor</div>
           </div>
 
           <div style={css("margin-top:var(--sp-3); padding:var(--sp-3) var(--sp-4); background:var(--weak); border:1px solid var(--weak-line); border-radius:var(--r-sm); font-size:13px; color:var(--ink-brand)")}>
@@ -65,7 +65,7 @@ export default function Deposit({ v }: { v: Vals }) {
             <span style={css("font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--muted)")}>Waiting for the transfer</span>
           </div>
 
-          <button onClick={v.depSim} style={css(v.ctaStyle)}>Simulate the transfer (demo)</button>
+          <button onClick={v.depSim} style={css(v.ctaStyle)}>Simulate the transfer</button>
           <button onClick={v.depBack} style={css(v.ghostStyle)}>Back</button>
         </div>
       ) : null}

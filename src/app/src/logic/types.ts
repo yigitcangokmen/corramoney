@@ -35,7 +35,6 @@ export interface Ctl {
   props: Props;
   set: (patch: Partial<AppState> | ((s: AppState) => Partial<AppState> | null)) => void;
   rate: number; spread: number; minAmt: number; maxAmt: number;
-  run: ReturnType<typeof setInterval>;
   trk: ReturnType<typeof setInterval>;
   refreshBalances: () => Promise<void>;
   connectDemo: () => Promise<void>;

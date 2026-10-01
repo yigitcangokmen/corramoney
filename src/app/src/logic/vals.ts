@@ -36,6 +36,8 @@ export function buildVals(ctl: Ctl): Vals {
     doConnectDemo: () => ctl.connectDemo(),
     doConnectFreighter: () => ctl.connectFreighter(),
     doDisconnect: () => ctl.disconnect(),
+    walletTag: s.walletMode === 'demo' ? 'Demo · testnet'
+      : s.walletMode === 'freighter' ? 'Freighter · testnet' : 'Testnet',
 
     tabs: TABS.map(([id, label]) => ({
       label: label,
@@ -64,10 +66,10 @@ export function buildVals(ctl: Ctl): Vals {
     depB: () => ctl.set({ depDigits:'3500' }),
     depC: () => ctl.set({ depDigits:'10000' }),
     depLine: depOk || dep === 0 ? 'var(--line)' : 'var(--amber-line)',
-    depHint: hintFn(dep, depOk),
+    depHint: s.walletMode === 'none' ? 'Connect a wallet to deposit' : hintFn(dep, depOk),
     depHintColor: depOk || dep === 0 ? 'var(--subtle)' : 'var(--amber)',
-    depNotReady: !depOk,
-    depBtnStyle: cta(depOk),
+    depNotReady: !depOk || s.walletMode === 'none',
+    depBtnStyle: cta(depOk && s.walletMode !== 'none'),
     depTry: 'MX$' + ctl.n(dep, 2),
     depUsdc: ctl.n(ctl.usdc(dep), 2) + ' USDC',
     depRef: 'ORDER ' + s.depRef,
@@ -102,9 +104,9 @@ export function buildVals(ctl: Ctl): Vals {
     onSnd: (e: any) => ctl.set({
       sndDigits: String(e.target.value).replace(/[^0-9]/g, '').slice(0, 6) || '0' }),
     sndLine: sndOk || snd === 0 ? 'var(--line)' : 'var(--amber-line)',
-    sndHint: hintFn(snd, snd >= ctl.minAmt && snd <= ctl.maxAmt),
+    sndHint: s.walletMode === 'none' ? 'Connect a wallet to send' : hintFn(snd, snd >= ctl.minAmt && snd <= ctl.maxAmt),
     sndHintColor: snd >= ctl.minAmt && snd <= ctl.maxAmt ? 'var(--subtle)' : 'var(--amber)',
-    sndNotReady: !sndOk, sndBtnStyle: cta(sndOk),
+    sndNotReady: !sndOk || s.walletMode === 'none', sndBtnStyle: cta(sndOk && s.walletMode !== 'none'),
     sndNext: () => { if (sndOk) ctl.set({ sendStep:2 }); },
     sndBack: () => ctl.set({ sendStep:1 }),
     sndSign: () => ctl.sndSign(),

@@ -64,10 +64,10 @@ export function cashOut(ctl: Ctl) {
 }
 
 export function reset(ctl: Ctl) {
-  clearInterval(ctl.run); clearInterval(ctl.trk);
+  clearInterval(ctl.trk);
   ctl.set({ tab:'deposit', depStep:'form', depDigits:'3500', depProg:0,
     sendStep:1, sndDigits:'3500', pick:'PH', addr:'',
     elapsed:0, trackProg:0, txHash:'', ledger:0, pos:{}, vaultDigits:'',
-    vaultPick:'blend', sign:null, signState:'ask', wallet:270.70, history:[],
+    vaultPick:'blend', sign:null, signState:'ask', wallet:0, history:[],
     walletMode:'none', pubkey:null, secretKey:null, connecting:false });
 }
