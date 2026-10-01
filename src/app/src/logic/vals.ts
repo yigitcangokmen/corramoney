@@ -236,7 +236,8 @@ export function buildVals(ctl: Ctl): Vals {
     history: s.history.map(e => ({
       kind:e.kind, state:e.state, when:e.when,
       inAmt:e.inAmt, outAmt:e.outAmt, tx:e.tx ? e.tx + '…' : '',
-      hasTx: !!e.tx, earned:e.earned || '', hasEarned: !!e.earned,
+      hasTx: !!e.tx, txUrl: e.tx ? 'https://stellar.expert/explorer/testnet/tx/' + e.tx : '',
+      earned:e.earned || '', hasEarned: !!e.earned,
       stateColor: e.tone ? 'var(--ink-brand)' : 'var(--amber)',
       dot: 'flex:none; width:8px; height:8px; border-radius:50%; background:' +
         (e.tone ? 'var(--brand)' : 'var(--amber)') + ';',

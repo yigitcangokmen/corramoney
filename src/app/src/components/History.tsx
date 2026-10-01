@@ -43,7 +43,7 @@ export default function History({ v }: { v: Vals }) {
                 ) : null}
               </div>
               {h.hasTx ? (
-                <a href="https://stellar.expert" target="_blank" rel="noopener" style={css("margin-top:var(--sp-3); display:inline-block; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em")}>TX: {h.tx}</a>
+                <a href={h.txUrl} target="_blank" rel="noopener" style={css("margin-top:var(--sp-3); display:inline-block; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em")}>TX: {h.tx}</a>
               ) : null}
             </div>
           ))}
