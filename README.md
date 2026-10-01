@@ -7,7 +7,7 @@
 Corra is a **non-custodial cross-border remittance app on Stellar**.
 Send local cash in one country, your recipient gets local cash in another, and nobody ever sees the word "crypto."
 
-[![Try the demo](https://img.shields.io/badge/try%20the%20demo-try.corra.money-0E8546)](https://try.corra.money)
+[![Try the app](https://img.shields.io/badge/try%20the%20app-app.corra.money-0E8546)](https://app.corra.money)
 [![Website](https://img.shields.io/badge/corra.money-0B1437)](https://corra.money)
 [![Stellar](https://img.shields.io/badge/Stellar-testnet-7B3FE4)](https://stellar.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -17,15 +17,15 @@ Send local cash in one country, your recipient gets local cash in another, and n
 
 ---
 
-## Try the demo
+## Try the app
 
-**[try.corra.money](https://try.corra.money)** -- deposit TRY, pick a corridor, send money, watch it settle. The full flow from cash-in to payout in four tabs.
+**[app.corra.money](https://app.corra.money)** -- deposit MXN, pick a corridor, send money, watch it settle. The full flow from cash-in to payout in four tabs.
 
 ```
-TRY 3,500  ->  USDC  ->  PHP 4,050      four corridors, one integration
+MXN 3,500  ->  USDC  ->  PHP 3,066      six corridors, one integration
 ```
 
-Deposit, send across corridors (Philippines, Mexico, Europe), earn yield on idle balances, and review every step in the transaction history.
+Deposit, send across corridors (Philippines, Brazil, Argentina, Indonesia, Thailand), earn yield on idle balances, and review every step in the transaction history.
 
 **Corra's server never holds a private key.** It builds an unsigned transaction, your browser signs it, and the server only relays the signed XDR onward. Details in [Non-custodial by design](#non-custodial-by-design).
 
