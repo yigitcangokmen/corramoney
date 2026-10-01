@@ -68,5 +68,6 @@ export function reset(ctl: Ctl) {
   ctl.set({ tab:'deposit', depStep:'form', depDigits:'3500', depProg:0,
     sendStep:1, sndDigits:'3500', pick:'PH', addr:'',
     elapsed:0, trackProg:0, txHash:'', ledger:0, pos:{}, vaultDigits:'',
-    vaultPick:'blend', sign:null, signState:'ask', wallet:270.70, history:[] });
+    vaultPick:'blend', sign:null, signState:'ask', wallet:270.70, history:[],
+    walletMode:'none', pubkey:null, secretKey:null, connecting:false });
 }

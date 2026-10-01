@@ -10,7 +10,7 @@ export function n(ctl: Ctl, v: number, d: number) { return v.toLocaleString('en-
 
 export function amt(ctl: Ctl, k: string) { return parseInt((ctl.state as any)[k] || '0', 10) || 0; }
 
-export function usdc(ctl: Ctl, try_: number) { return try_ / ctl.rate; }
+export function usdc(ctl: Ctl, mxn: number) { return mxn / ctl.rate; }
 
 export function corr(ctl: Ctl) { return CORR.find(c => c.iso === ctl.state.pick) || CORR[0]; }
 

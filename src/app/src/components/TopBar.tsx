@@ -15,11 +15,27 @@ export default function TopBar({ v }: { v: Vals }) {
       <span style={css("font-family:var(--mono); font-size:12.5px; color:var(--muted)")}>{v.rateTop}</span>
 
       <div style={css("margin-left:auto; display:flex; align-items:center; gap:var(--sp-4)")}>
-        <div style={css("text-align:right")}>
-          <div style={css("font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>Wallet</div>
-          <div style={css("font-family:var(--mono); font-size:14px; font-weight:500; font-variant-numeric:tabular-nums")}>{v.walletLabel}</div>
-        </div>
-        <span style={css("font-family:var(--mono); font-size:12px; color:var(--muted); padding:var(--sp-2) var(--sp-3); border:1px solid var(--line); border-radius:var(--r-sm)")}>GAJL…2677</span>
+        {v.isConnected ? (
+          <>
+            <div style={css("text-align:right")}>
+              <div style={css("font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>Balance</div>
+              <div style={css("font-family:var(--mono); font-size:14px; font-weight:500; font-variant-numeric:tabular-nums")}>{v.walletLabel}</div>
+            </div>
+            <span style={css("font-family:var(--mono); font-size:11px; color:var(--muted); padding:var(--sp-2) var(--sp-3); border:1px solid var(--line); border-radius:var(--r-sm)")}>{v.pubkeyShort}</span>
+            <button onClick={v.doDisconnect} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Disconnect</button>
+          </>
+        ) : (
+          <>
+            <div style={css("text-align:right")}>
+              <div style={css("font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>Wallet</div>
+              <div style={css("font-family:var(--mono); font-size:14px; font-weight:500; font-variant-numeric:tabular-nums")}>{v.walletLabel}</div>
+            </div>
+            <button onClick={v.doConnectDemo} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--brand); color:var(--on); border:none; border-radius:var(--r-sm); cursor:pointer")}>{v.connectLabel}</button>
+            {v.hasFreighter ? (
+              <button onClick={v.doConnectFreighter} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Freighter</button>
+            ) : null}
+          </>
+        )}
         <button onClick={v.reset} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Reset</button>
       </div>
     </div>

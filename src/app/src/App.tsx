@@ -5,6 +5,7 @@ import * as signing from './logic/signing';
 import * as deposit from './logic/deposit';
 import * as send from './logic/send';
 import * as earn from './logic/earn';
+import * as wallet from './logic/wallet';
 import { VAULTS } from './logic/data';
 import type { AppState, Ctl, Props } from './logic/types';
 import TopBar from './components/TopBar';
@@ -23,7 +24,8 @@ const INITIAL: AppState = {
   pos:{}, vaultDigits:'', vaultPick:'blend',
   sign:null, signState:'ask',
   wallet:270.70,
-  history:[]
+  history:[],
+  walletMode:'none', pubkey:null, secretKey:null, connecting:false
 };
 
 const PROPS: Props = { mxnPerUsd: 18.35, spread: 0.005 };
@@ -32,6 +34,7 @@ export default function App() {
   const [state, setState] = useState<AppState>(INITIAL);
   const live = useRef(state);
   live.current = state;
+  const balPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const set = useCallback((patch: any) => {
     setState(prev => {
@@ -68,11 +71,33 @@ export default function App() {
     c.depGo = () => deposit.depGo(c);
     c.depSim = () => deposit.depSim(c);
     c.sndSign = () => send.sndSign(c);
-    c.sndSim = () => send.sndSim(c);
     c.vaultGo = () => earn.vaultGo(c);
     c.vaultOut = (id: string) => earn.vaultOut(c, id);
     c.cashOut = () => earn.cashOut(c);
-    c.reset = () => earn.reset(c);
+    c.reset = () => {
+      if (balPollRef.current) clearInterval(balPollRef.current);
+      balPollRef.current = null;
+      earn.reset(c);
+    };
+
+    c.connectDemo = async () => {
+      await wallet.connectDemo(c);
+      if (c.state.walletMode === 'none') return;
+      if (balPollRef.current) clearInterval(balPollRef.current);
+      balPollRef.current = setInterval(() => wallet.refreshBalances(c), 8000);
+    };
+    c.connectFreighter = async () => {
+      await wallet.connectFreighter(c);
+      if (c.state.walletMode === 'none') return;
+      if (balPollRef.current) clearInterval(balPollRef.current);
+      balPollRef.current = setInterval(() => wallet.refreshBalances(c), 8000);
+    };
+    c.disconnect = () => {
+      if (balPollRef.current) clearInterval(balPollRef.current);
+      balPollRef.current = null;
+      wallet.disconnect(c);
+    };
+    c.refreshBalances = () => wallet.refreshBalances(c);
 
     return c as Ctl;
   }, [set]);
@@ -92,7 +117,10 @@ export default function App() {
         return { pos:next };
       });
     }, 90);
-    return () => clearInterval(fast);
+    return () => {
+      clearInterval(fast);
+      if (balPollRef.current) clearInterval(balPollRef.current);
+    };
   }, [set]);
 
   const v = buildVals(ctl);

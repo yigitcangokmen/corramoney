@@ -26,6 +26,17 @@ export function buildVals(ctl: Ctl): Vals {
       'background:var(--surface); color:var(--text); border:1px solid var(--line-strong);',
     ctaFlat: flat(true), ghostFlat: flat(false),
 
+    isConnected: s.walletMode !== 'none',
+    notConnected: s.walletMode === 'none',
+    isDemoWallet: s.walletMode === 'demo',
+    hasFreighter: typeof window !== 'undefined' && !!window.freighterApi,
+    pubkeyShort: s.pubkey ? s.pubkey.slice(0, 4) + '…' + s.pubkey.slice(-4) : '',
+    connectLabel: s.connecting ? 'Connecting...' : 'Demo Wallet',
+    connecting: s.connecting,
+    doConnectDemo: () => ctl.connectDemo(),
+    doConnectFreighter: () => ctl.connectFreighter(),
+    doDisconnect: () => ctl.disconnect(),
+
     tabs: TABS.map(([id, label]) => ({
       label: label,
       go: () => ctl.set({ tab:id }),
@@ -97,7 +108,6 @@ export function buildVals(ctl: Ctl): Vals {
     sndNext: () => { if (sndOk) ctl.set({ sendStep:2 }); },
     sndBack: () => ctl.set({ sendStep:1 }),
     sndSign: () => ctl.sndSign(),
-    sndSim: () => ctl.sndSim(),
     sndAgain: () => ctl.set({ sendStep:1, addr:'' }),
     sndTry: 'MX$' + ctl.n(snd, 2),
     sndUsdc: ctl.n(ctl.usdc(snd), 2) + ' USDC',
@@ -161,8 +171,17 @@ export function buildVals(ctl: Ctl): Vals {
         Math.round(((v as number) / 72) * 100) + '%; background:' +
         (own ? 'var(--brand)' : 'var(--n-300)') + ';'
     })),
-    txHash: s.txHash ? s.txHash + '…' : '—',
+    txFailed: s.txHash && s.txHash.startsWith('FAILED'),
+    txOk: s.txHash && !s.txHash.startsWith('FAILED'),
+    txHash: s.txHash
+      ? (s.txHash.startsWith('FAILED') ? s.txHash
+        : s.txHash.length > 16 ? s.txHash.slice(0, 12) + '…' : s.txHash)
+      : '—',
+    txHashFull: s.txHash || '',
     ledger: s.ledger ? '#' + s.ledger : '—',
+    stellarExpertLink: s.txHash && !s.txHash.startsWith('FAILED') && s.txHash.length > 16
+      ? 'https://stellar.expert/explorer/testnet/tx/' + s.txHash
+      : 'https://stellar.expert/explorer/testnet',
 
     vaults: VAULTS.map(v => ({
       name:v.name, note:v.note, addr:v.addr, apy: ctl.n(v.apy, 1) + '%',

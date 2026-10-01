@@ -22,6 +22,10 @@ export interface AppState {
   sign: Sign | null; signState: string;
   wallet: number;
   history: Entry[];
+  walletMode: 'none' | 'demo' | 'freighter';
+  pubkey: string | null;
+  secretKey: string | null;
+  connecting: boolean;
 }
 
 export interface Props { mxnPerUsd?: number; spread?: number }
@@ -31,5 +35,11 @@ export interface Ctl {
   props: Props;
   set: (patch: Partial<AppState> | ((s: AppState) => Partial<AppState> | null)) => void;
   rate: number; spread: number; minAmt: number; maxAmt: number;
+  run: ReturnType<typeof setInterval>;
+  trk: ReturnType<typeof setInterval>;
+  refreshBalances: () => Promise<void>;
+  connectDemo: () => Promise<void>;
+  connectFreighter: () => Promise<void>;
+  disconnect: () => void;
   [key: string]: any;
 }

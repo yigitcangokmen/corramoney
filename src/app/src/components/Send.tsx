@@ -151,12 +151,25 @@ export default function Send({ v }: { v: Vals }) {
 
         {v.sf5 ? (
           <div style={css("text-align:center")}>
-            <div style={css("display:inline-grid; place-items:center; width:52px; height:52px; border-radius:50%; background:var(--brand)")}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                <path d="M6 12.5l4 4 8-8.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="26" strokeDashoffset="26" style={css("animation:dCheck .5s cubic-bezier(.16,1,.3,1) .1s both")}></path></svg>
-            </div>
-            <div style={css("margin-top:var(--sp-4); font-size:20px; font-weight:600")}>Transfer complete</div>
-            <div style={css("margin-top:var(--sp-2); font-family:var(--mono); font-size:24px; font-weight:500; color:var(--ink-brand)")}>{v.sndOut}</div>
+            {v.txOk ? (
+              <>
+                <div style={css("display:inline-grid; place-items:center; width:52px; height:52px; border-radius:50%; background:var(--brand)")}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 12.5l4 4 8-8.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="26" strokeDashoffset="26" style={css("animation:dCheck .5s cubic-bezier(.16,1,.3,1) .1s both")}></path></svg>
+                </div>
+                <div style={css("margin-top:var(--sp-4); font-size:20px; font-weight:600")}>Transfer complete</div>
+                <div style={css("margin-top:var(--sp-2); font-family:var(--mono); font-size:24px; font-weight:500; color:var(--ink-brand)")}>{v.sndOut}</div>
+              </>
+            ) : (
+              <>
+                <div style={css("display:inline-grid; place-items:center; width:52px; height:52px; border-radius:50%; background:var(--n-300)")}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 7l10 10M17 7l-10 10" stroke="#fff" strokeWidth="2.6" strokeLinecap="round"></path></svg>
+                </div>
+                <div style={css("margin-top:var(--sp-4); font-size:20px; font-weight:600; color:var(--muted)")}>Transfer failed</div>
+                <div style={css("margin-top:var(--sp-2); font-family:var(--mono); font-size:14px; color:var(--amber)")}>{v.txHash}</div>
+              </>
+            )}
 
             <div style={css("margin-top:var(--sp-6); text-align:left")}>
               <div style={css("font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)")}>Time per step</div>
@@ -182,7 +195,7 @@ export default function Send({ v }: { v: Vals }) {
                 <span style={css("font-family:var(--mono); font-size:13px")}>0.0000100 XLM</span></div>
             </div>
 
-            <a href="https://stellar.expert" target="_blank" rel="noopener" style={css("margin-top:var(--sp-3); display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); padding:var(--sp-4); background:var(--weak); border:1px solid var(--weak-line); border-radius:var(--r-sm); font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--ink-brand)")}>
+            <a href={v.stellarExpertLink} target="_blank" rel="noopener" style={css("margin-top:var(--sp-3); display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); padding:var(--sp-4); background:var(--weak); border:1px solid var(--weak-line); border-radius:var(--r-sm); font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--ink-brand)")}>
               VERIFY ON STELLAR.EXPERT
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={css("flex:none")}>
                 <path d="M5 12h13M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"></path></svg></a>
