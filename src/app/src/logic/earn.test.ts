@@ -11,7 +11,7 @@ const INITIAL: AppState = {
   sign:null, signState:'ask',
   wallet:500,
   history:[],
-  walletMode:'demo', pubkey:'GABCDEF', secretKey:'SABCDEF', connecting:false
+  walletMode:'freighter', pubkey:'GABCDEF', connecting:false
 };
 
 function makeCTL(overrides: Partial<AppState> = {}): Ctl {

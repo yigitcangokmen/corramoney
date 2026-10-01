@@ -28,13 +28,14 @@ export function buildVals(ctl: Ctl): Vals {
 
     isConnected: s.walletMode !== 'none',
     notConnected: s.walletMode === 'none',
-    isDemoWallet: s.walletMode === 'demo',
+    hasFreighter: typeof window !== 'undefined' && !!window.freighterApi,
     pubkeyShort: s.pubkey ? s.pubkey.slice(0, 4) + '…' + s.pubkey.slice(-4) : '',
-    connectLabel: s.connecting ? 'Connecting...' : 'Connect Wallet',
+    connectLabel: s.connecting ? 'Connecting...'
+      : (typeof window !== 'undefined' && window.freighterApi) ? 'Connect Wallet' : 'Install Freighter',
     connecting: s.connecting,
     doConnect: () => ctl.connect(),
     doDisconnect: () => ctl.disconnect(),
-    walletTag: s.walletMode === 'freighter' ? 'Freighter · testnet' : 'Testnet',
+    walletTag: 'Freighter · testnet',
 
     tabs: TABS.map(([id, label]) => ({
       label: label,

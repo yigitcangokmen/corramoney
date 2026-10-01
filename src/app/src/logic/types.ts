@@ -22,9 +22,8 @@ export interface AppState {
   sign: Sign | null; signState: string;
   wallet: number;
   history: Entry[];
-  walletMode: 'none' | 'demo' | 'freighter';
+  walletMode: 'none' | 'freighter';
   pubkey: string | null;
-  secretKey: string | null;
   connecting: boolean;
 }
 

@@ -11,7 +11,7 @@ const INITIAL: AppState = {
   sign:null, signState:'ask',
   wallet:0,
   history:[],
-  walletMode:'none', pubkey:null, secretKey:null, connecting:false
+  walletMode:'none', pubkey:null, connecting:false
 };
 
 function makeCTL(overrides: Partial<AppState> = {}): Ctl {
@@ -53,9 +53,9 @@ function makeCTL(overrides: Partial<AppState> = {}): Ctl {
 }
 
 describe('buildVals wallet state', () => {
-  it('shows Connect Wallet when not connected', () => {
+  it('shows Install Freighter when no extension', () => {
     const v = buildVals(makeCTL());
-    expect(v.connectLabel).toBe('Connect Wallet');
+    expect(v.connectLabel).toBe('Install Freighter');
     expect(v.isConnected).toBe(false);
     expect(v.notConnected).toBe(true);
   });
@@ -66,7 +66,7 @@ describe('buildVals wallet state', () => {
   });
 
   it('shows connected state with pubkey', () => {
-    const v = buildVals(makeCTL({ walletMode: 'demo', pubkey: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ABCDEFGHIJKLMNOP' }));
+    const v = buildVals(makeCTL({ walletMode: 'freighter', pubkey: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ABCDEFGHIJKLMNOP' }));
     expect(v.isConnected).toBe(true);
     expect(v.notConnected).toBe(false);
     expect(v.pubkeyShort).toContain('GABC');
@@ -76,11 +76,6 @@ describe('buildVals wallet state', () => {
   it('shows Freighter wallet tag', () => {
     const v = buildVals(makeCTL({ walletMode: 'freighter' }));
     expect(v.walletTag).toContain('Freighter');
-  });
-
-  it('shows Testnet tag for demo wallet', () => {
-    const v = buildVals(makeCTL({ walletMode: 'demo' }));
-    expect(v.walletTag).toBe('Testnet');
   });
 
   it('wallet balance is 0.00 USDC without wallet', () => {
@@ -100,9 +95,9 @@ describe('buildVals removed mock artifacts', () => {
     expect(v.doConnectFreighter).toBeUndefined();
   });
 
-  it('does not have hasFreighter', () => {
+  it('hasFreighter is false in test env', () => {
     const v = buildVals(makeCTL());
-    expect(v.hasFreighter).toBeUndefined();
+    expect(v.hasFreighter).toBe(false);
   });
 
   it('does not have reset', () => {
@@ -152,7 +147,7 @@ describe('buildVals send flow gates', () => {
 
   it('allows send with wallet and valid input', () => {
     const v = buildVals(makeCTL({
-      walletMode: 'demo', sndDigits: '3500',
+      walletMode: 'freighter', sndDigits: '3500',
       addr: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ABCDEFGHIJKLMNOP'
     }));
     expect(v.sndNotReady).toBe(false);
@@ -160,7 +155,7 @@ describe('buildVals send flow gates', () => {
 
   it('blocks send with amount below min', () => {
     const v = buildVals(makeCTL({
-      walletMode: 'demo', sndDigits: '100',
+      walletMode: 'freighter', sndDigits: '100',
       addr: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ABCDEFGHIJKLMNOP'
     }));
     expect(v.sndNotReady).toBe(true);
@@ -175,7 +170,7 @@ describe('buildVals deposit flow gates', () => {
   });
 
   it('allows deposit with wallet and valid amount', () => {
-    const v = buildVals(makeCTL({ walletMode: 'demo', depDigits: '3500' }));
+    const v = buildVals(makeCTL({ walletMode: 'freighter', depDigits: '3500' }));
     expect(v.depNotReady).toBe(false);
   });
 });

@@ -11,7 +11,7 @@ const INITIAL: AppState = {
   sign:null, signState:'ask',
   wallet:500,
   history:[],
-  walletMode:'demo', pubkey:'GABCDEF', secretKey:'SABCDEF', connecting:false
+  walletMode:'freighter', pubkey:'GABCDEF', connecting:false
 };
 
 function makeCTL(overrides: Partial<AppState> = {}): Ctl & { _patches: any[] } {
@@ -39,7 +39,6 @@ describe('disconnect', () => {
     disconnect(ctl);
     expect(ctl.state.walletMode).toBe('none');
     expect(ctl.state.pubkey).toBeNull();
-    expect(ctl.state.secretKey).toBeNull();
     expect(ctl.state.wallet).toBe(0);
     expect(ctl.state.connecting).toBe(false);
   });

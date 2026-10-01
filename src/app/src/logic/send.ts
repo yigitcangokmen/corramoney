@@ -44,16 +44,10 @@ async function sndReal(ctl: Ctl) {
     })).setTimeout(1800).build();
 
     ctl.set({ trackProg:55 });
-    let signedTx;
-    if (ctl.state.walletMode === 'demo') {
-      tx.sign(StellarSdk.Keypair.fromSecret(ctl.state.secretKey!));
-      signedTx = tx;
-    } else {
-      const sr = await window.freighterApi!.signTransaction(tx.toXDR(), {
-        networkPassphrase:NETWORK_PASSPHRASE });
-      const xdr = typeof sr === 'string' ? sr : sr.signedTxXdr;
-      signedTx = StellarSdk.TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
-    }
+    const sr = await window.freighterApi!.signTransaction(tx.toXDR(), {
+      networkPassphrase:NETWORK_PASSPHRASE });
+    const xdr = typeof sr === 'string' ? sr : sr.signedTxXdr;
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
 
     ctl.set({ trackProg:75 });
     const result = await horizon.submitTransaction(signedTx as any);

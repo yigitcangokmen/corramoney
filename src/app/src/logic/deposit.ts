@@ -23,16 +23,11 @@ export async function depSim(ctl: Ctl) {
         fee:'100', networkPassphrase:NETWORK_PASSPHRASE
       }).addOperation(StellarSdk.Operation.changeTrust({ asset:USDC }))
         .setTimeout(30).build();
-      if (ctl.state.walletMode === 'demo') {
-        ttx.sign(StellarSdk.Keypair.fromSecret(ctl.state.secretKey!));
-        await horizon.submitTransaction(ttx);
-      } else {
-        const sr = await window.freighterApi!.signTransaction(ttx.toXDR(), {
-          networkPassphrase:NETWORK_PASSPHRASE });
-        const xdr = typeof sr === 'string' ? sr : sr.signedTxXdr;
-        const signed = StellarSdk.TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
-        await horizon.submitTransaction(signed as any);
-      }
+      const sr = await window.freighterApi!.signTransaction(ttx.toXDR(), {
+        networkPassphrase:NETWORK_PASSPHRASE });
+      const xdr = typeof sr === 'string' ? sr : sr.signedTxXdr;
+      const signed = StellarSdk.TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
+      await horizon.submitTransaction(signed as any);
     }
     ctl.set({ depProg:60 });
     await ctl.refreshBalances();
