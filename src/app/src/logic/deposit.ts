@@ -53,13 +53,14 @@ export async function depSim(ctl: Ctl) {
     const txHash = result.hash || '';
 
     ctl.set({ depProg:80 });
-    await ctl.refreshBalances();
     ctl.set((st: any) => ({
       depProg:100, depStep:'done',
+      wallet: st.wallet + parseFloat(credited),
       history: [{ kind:'MXN deposit', state:'Completed', tone:1,
         inAmt:'MX$' + ctl.n(a, 2), outAmt:ctl.n(parseFloat(credited), 4) + ' USDC',
         when:ctl.stamp(), tx:txHash }].concat(st.history.slice(1)).slice(0, 12)
     }));
+    ctl.refreshBalances().catch(() => {});
   } catch(e) {
     console.error('Deposit failed:', e);
     ctl.set({ depStep:'form' });
