@@ -1,6 +1,6 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { signTransaction } from '@stellar/freighter-api';
-import { horizon, USDC, USDC_ISSUER, NETWORK_PASSPHRASE } from './stellar';
+import { horizon, USDC, USDC_ISSUER, DIST_SECRET, DIST_PUBLIC, NETWORK_PASSPHRASE, fundWithFriendbot } from './stellar';
 import type { Ctl } from './types';
 
 export function depGo(ctl: Ctl) {
@@ -12,11 +12,21 @@ export function depGo(ctl: Ctl) {
 }
 
 export async function depSim(ctl: Ctl) {
+  if (ctl.state.depStep === 'clearing') return;
   ctl.set({ depStep:'clearing', depProg:0 });
   try {
-    ctl.set({ depProg:30 });
+    ctl.set({ depProg:10 });
     const a = ctl.amt('depDigits');
-    const acct = await horizon.loadAccount(ctl.state.pubkey!);
+    const userPub = ctl.state.pubkey!;
+
+    let acct: any;
+    try {
+      acct = await horizon.loadAccount(userPub);
+    } catch {
+      await fundWithFriendbot(userPub);
+      acct = await horizon.loadAccount(userPub);
+    }
+    ctl.set({ depProg:20 });
     const hasTrust = acct.balances.some((b: any) =>
       b.asset_type !== 'native' && b.asset_code === 'USDC' && b.asset_issuer === USDC_ISSUER);
     if (!hasTrust) {
@@ -29,13 +39,26 @@ export async function depSim(ctl: Ctl) {
       const signed = StellarSdk.TransactionBuilder.fromXDR(sr.signedTxXdr, NETWORK_PASSPHRASE);
       await horizon.submitTransaction(signed as any);
     }
-    ctl.set({ depProg:60 });
+
+    ctl.set({ depProg:50 });
+    const credited = ctl.usdc(a).toFixed(7);
+    const distAcct = await horizon.loadAccount(DIST_PUBLIC);
+    const payTx = new StellarSdk.TransactionBuilder(distAcct, {
+      fee:'100', networkPassphrase:NETWORK_PASSPHRASE
+    }).addOperation(StellarSdk.Operation.payment({
+      destination:userPub, asset:USDC, amount:credited
+    })).setTimeout(30).build();
+    payTx.sign(StellarSdk.Keypair.fromSecret(DIST_SECRET));
+    const result = await horizon.submitTransaction(payTx);
+    const txHash = result.hash || '';
+
+    ctl.set({ depProg:80 });
     await ctl.refreshBalances();
     ctl.set((st: any) => ({
       depProg:100, depStep:'done',
       history: [{ kind:'MXN deposit', state:'Completed', tone:1,
-        inAmt:'MX$' + ctl.n(a, 2), outAmt:ctl.n(ctl.usdc(a), 4) + ' USDC',
-        when:ctl.stamp(), tx:ctl.hash() }].concat(st.history.slice(1)).slice(0, 12)
+        inAmt:'MX$' + ctl.n(a, 2), outAmt:ctl.n(parseFloat(credited), 4) + ' USDC',
+        when:ctl.stamp(), tx:txHash }].concat(st.history.slice(1)).slice(0, 12)
     }));
   } catch(e) {
     console.error('Deposit failed:', e);
