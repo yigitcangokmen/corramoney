@@ -2,7 +2,8 @@ import { VAULTS, CORR } from './data';
 import type { Ctl, Position } from './types';
 
 export function earnedOf(p: Position, apy: number) {
-  return p.amt * (apy / 100) / 31536000 * ((Date.now() - p.at) / 1000);
+  const elapsed = Math.min(Math.max(Date.now() - p.at, 0), 31536000000) / 1000;
+  return p.amt * (apy / 100) / 31536000 * elapsed;
 }
 
 export function n(ctl: Ctl, v: number, d: number) { return v.toLocaleString('en-US',
