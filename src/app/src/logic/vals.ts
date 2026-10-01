@@ -1,5 +1,5 @@
 import { VAULTS, CORR, TABS, TRACK } from './data';
-import { chip, cta, flat, hint as hintFor } from './styles';
+import { chip, cta, flat, hint as hintFn } from './styles';
 import { earnedOf } from './helpers';
 import type { Ctl } from './types';
 
@@ -12,12 +12,10 @@ export function buildVals(ctl: Ctl): Vals {
   const depOk = dep >= ctl.minAmt && dep <= ctl.maxAmt;
   const sndOk = snd >= ctl.minAmt && snd <= ctl.maxAmt && s.addr.length > 20;
 
-  const hint = (a: number, ok: boolean) => hintFor(a, ok, ctl.minAmt);
-
   const sndOut = ctl.usdc(snd) * (1 - ctl.spread) * c.rate;
 
   return {
-    rateTop: '1 USDC = ' + ctl.n(ctl.rate, 2) + ' TRY',
+    rateTop: '1 USDC = ' + ctl.n(ctl.rate, 2) + ' MXN',
     rowStyle: 'display:flex; justify-content:space-between; gap:var(--sp-3); font-size:14px;',
     kStyle: 'font-family:var(--mono); font-size:10px; letter-spacing:.14em;' +
       'text-transform:uppercase; color:var(--subtle);',
@@ -49,20 +47,20 @@ export function buildVals(ctl: Ctl): Vals {
     depForm: s.depStep === 'form', depWaiting: s.depStep === 'waiting',
     depClearing: s.depStep === 'clearing', depDone: s.depStep === 'done',
     depText: dep === 0 ? '' : ctl.n(dep, 0),
-    onDep: e => ctl.set({
+    onDep: (e: any) => ctl.set({
       depDigits: String(e.target.value).replace(/[^0-9]/g, '').slice(0, 6) || '0' }),
-    depA: () => ctl.set({ depDigits:'500' }),
-    depB: () => ctl.set({ depDigits:'1000' }),
-    depC: () => ctl.set({ depDigits:'3000' }),
+    depA: () => ctl.set({ depDigits:'1000' }),
+    depB: () => ctl.set({ depDigits:'3500' }),
+    depC: () => ctl.set({ depDigits:'10000' }),
     depLine: depOk || dep === 0 ? 'var(--line)' : 'var(--amber-line)',
-    depHint: hint(dep, depOk),
+    depHint: hintFn(dep, depOk),
     depHintColor: depOk || dep === 0 ? 'var(--subtle)' : 'var(--amber)',
     depNotReady: !depOk,
     depBtnStyle: cta(depOk),
-    depTry: '\u20BA' + ctl.n(dep, 2),
+    depTry: 'MX$' + ctl.n(dep, 2),
     depUsdc: ctl.n(ctl.usdc(dep), 2) + ' USDC',
-    depRef: 'CORRA-' + s.depRef,
-    depRefCode: 'CORRA-' + s.depRef + '-TRY',
+    depRef: 'ORDER ' + s.depRef,
+    depRefCode: 'ORDER ' + s.depRef,
     depProg: s.depProg + '%',
     depGo: () => ctl.depGo(), depSim: () => ctl.depSim(),
     depBack: () => ctl.set({ depStep:'form' }),
@@ -73,7 +71,7 @@ export function buildVals(ctl: Ctl): Vals {
     stepRail: [1,2,3,4,5].map((i, idx, arr) => {
       const done = s.sendStep > i, now = s.sendStep === i;
       return {
-        mark: done ? '\u2713' : String(i),
+        mark: done ? '✓' : String(i),
         wrap: 'display:flex; align-items:center; gap:var(--sp-2);' +
           (idx < arr.length - 1 ? 'flex:1;' : 'flex:none;'),
         dot: 'flex:none; width:26px; height:26px; border-radius:50%; display:grid;' +
@@ -90,10 +88,10 @@ export function buildVals(ctl: Ctl): Vals {
       };
     }),
     sndText: snd === 0 ? '' : ctl.n(snd, 0),
-    onSnd: e => ctl.set({
+    onSnd: (e: any) => ctl.set({
       sndDigits: String(e.target.value).replace(/[^0-9]/g, '').slice(0, 6) || '0' }),
     sndLine: sndOk || snd === 0 ? 'var(--line)' : 'var(--amber-line)',
-    sndHint: hint(snd, snd >= ctl.minAmt && snd <= ctl.maxAmt),
+    sndHint: hintFn(snd, snd >= ctl.minAmt && snd <= ctl.maxAmt),
     sndHintColor: snd >= ctl.minAmt && snd <= ctl.maxAmt ? 'var(--subtle)' : 'var(--amber)',
     sndNotReady: !sndOk, sndBtnStyle: cta(sndOk),
     sndNext: () => { if (sndOk) ctl.set({ sendStep:2 }); },
@@ -101,7 +99,7 @@ export function buildVals(ctl: Ctl): Vals {
     sndSign: () => ctl.sndSign(),
     sndSim: () => ctl.sndSim(),
     sndAgain: () => ctl.set({ sendStep:1, addr:'' }),
-    sndTry: '\u20BA' + ctl.n(snd, 2),
+    sndTry: 'MX$' + ctl.n(snd, 2),
     sndUsdc: ctl.n(ctl.usdc(snd), 2) + ' USDC',
     sndOut: c.sym + ctl.n(sndOut, 2),
     sagaId: s.saga + '-5181-4f75-880c',
@@ -124,10 +122,10 @@ export function buildVals(ctl: Ctl): Vals {
     pickName: c.name, pickCur: c.cur, pickIso: c.iso,
     recvLabel: 'They receive (' + c.cur + ')',
     addrText: s.addr,
-    onAddr: e => ctl.set({ addr:String(e.target.value).trim() }),
+    onAddr: (e: any) => ctl.set({ addr:String(e.target.value).trim() }),
     useDemo: () => ctl.set({
       addr:'GACLSIXJM43JYSE4NYNUKQT377YIIQNAO3QB3KRQHZE2RVS5XAHJ5SBV' }),
-    addrShort: s.addr ? s.addr.slice(0, 6) + '\u2026' + s.addr.slice(-6) : '\u2014',
+    addrShort: s.addr ? s.addr.slice(0, 6) + '…' + s.addr.slice(-6) : '—',
     trackPct: s.trackProg + '%',
     elapsedLabel: ctl.n(s.elapsed, 1) + ' s',
     senderBal: ctl.n(Math.max(0, s.wallet - ctl.usdc(snd) * (s.trackProg / 100)), 2) + ' USDC',
@@ -138,7 +136,7 @@ export function buildVals(ctl: Ctl): Vals {
       const now = !done && s.trackProg >= at - 34;
       return {
         label: label,
-        mark: done ? '\u2713' : '',
+        mark: done ? '✓' : '',
         at: done ? ctl.n(at * 0.052, 1) + ' s' : '',
         weight: now || done ? '600' : '400',
         style: 'display:flex; align-items:center; gap:var(--sp-3);' +
@@ -157,14 +155,14 @@ export function buildVals(ctl: Ctl): Vals {
       ['Confirm and submit', 2.5, 2.5], ['A bank wire, for comparison', 72, 0]
     ].map(([label, v, own]) => ({
       label: label,
-      val: own ? ctl.n(v, 1) + ' s' : '1\u20133 days',
+      val: own ? ctl.n(v as number, 1) + ' s' : '1–3 days',
       labelColor: own ? 'var(--text)' : 'var(--muted)',
       fill: 'height:100%; border-radius:var(--r-xs); width:' +
-        Math.round((v / 72) * 100) + '%; background:' +
+        Math.round(((v as number) / 72) * 100) + '%; background:' +
         (own ? 'var(--brand)' : 'var(--n-300)') + ';'
     })),
-    txHash: s.txHash ? s.txHash + '\u2026' : '\u2014',
-    ledger: s.ledger ? '#' + s.ledger : '\u2014',
+    txHash: s.txHash ? s.txHash + '…' : '—',
+    ledger: s.ledger ? '#' + s.ledger : '—',
 
     vaults: VAULTS.map(v => ({
       name:v.name, note:v.note, addr:v.addr, apy: ctl.n(v.apy, 1) + '%',
@@ -209,7 +207,7 @@ export function buildVals(ctl: Ctl): Vals {
     tickerBig: ctl.n(ctl.totalEarned(), 4),
     tickerTail: String(ctl.totalEarned().toFixed(9)).slice(-5),
     vaultText: s.vaultDigits,
-    onVault: e => ctl.set({
+    onVault: (e: any) => ctl.set({
       vaultDigits: String(e.target.value).replace(/[^0-9.,]/g, '').replace(',', '.') }),
     vaultGo: () => ctl.vaultGo(),
     cashOut: () => ctl.cashOut(),
@@ -222,7 +220,7 @@ export function buildVals(ctl: Ctl): Vals {
 
     history: s.history.map(e => ({
       kind:e.kind, state:e.state, when:e.when,
-      inAmt:e.inAmt, outAmt:e.outAmt, tx:e.tx ? e.tx + '\u2026' : '',
+      inAmt:e.inAmt, outAmt:e.outAmt, tx:e.tx ? e.tx + '…' : '',
       hasTx: !!e.tx, earned:e.earned || '', hasEarned: !!e.earned,
       stateColor: e.tone ? 'var(--ink-brand)' : 'var(--amber)',
       dot: 'flex:none; width:8px; height:8px; border-radius:50%; background:' +

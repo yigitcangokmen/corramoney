@@ -3,8 +3,8 @@ import type { Ctl } from './types';
 export function depGo(ctl: Ctl) {
   const a = ctl.amt('depDigits');
   ctl.set({ depStep:'waiting', depRef:1000 + Math.floor(Math.random() * 8999) });
-  ctl.log({ kind:'TRY deposit', state:'Awaiting transfer', tone:0,
-    inAmt:'\u20BA' + ctl.n(a, 2), outAmt:'\u2014', when:ctl.stamp(), tx:null });
+  ctl.log({ kind:'MXN deposit', state:'Awaiting transfer', tone:0,
+    inAmt:'MX$' + ctl.n(a, 2), outAmt:'—', when:ctl.stamp(), tx:null });
 }
 
 export function depSim(ctl: Ctl) {
@@ -15,10 +15,10 @@ export function depSim(ctl: Ctl) {
     if (p < 100){ ctl.set({ depProg:p }); return; }
     clearInterval(ctl.run);
     const a = ctl.amt('depDigits'), got = ctl.usdc(a);
-    ctl.set(st => ({
+    ctl.set((st: any) => ({
       depProg:100, depStep:'done', wallet: st.wallet + got,
-      history: [{ kind:'TRY deposit', state:'Completed', tone:1,
-        inAmt:'\u20BA' + ctl.n(a, 2), outAmt:ctl.n(got, 4) + ' USDC',
+      history: [{ kind:'MXN deposit', state:'Completed', tone:1,
+        inAmt:'MX$' + ctl.n(a, 2), outAmt:ctl.n(got, 4) + ' USDC',
         when:ctl.stamp(), tx:ctl.hash() }].concat(st.history.slice(1)).slice(0, 12)
     }));
   }, 100);

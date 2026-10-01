@@ -3,7 +3,7 @@ export interface Position { amt: number; at: number; earned: number }
 export interface Entry {
   kind: string; state: string; tone: number;
   inAmt: string; outAmt: string; earned?: string;
-  when: string; tx: string;
+  when: string; tx: string | null;
 }
 
 export interface Sign {
@@ -24,7 +24,7 @@ export interface AppState {
   history: Entry[];
 }
 
-export interface Props { tryPerUsd?: number; spread?: number }
+export interface Props { mxnPerUsd?: number; spread?: number }
 
 export interface Ctl {
   state: AppState;

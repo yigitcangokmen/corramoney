@@ -1,12 +1,2 @@
-import { useEffect, useState } from 'react';
-
-export function useYieldAccrual(): number {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const fast = setInterval(() => setTick(t => t + 1), 90);
-    return () => clearInterval(fast);
-  }, []);
-
-  return tick;
-}
+// yield accrual is handled in App.tsx via useEffect with 90ms interval
+// this file is kept for module structure consistency

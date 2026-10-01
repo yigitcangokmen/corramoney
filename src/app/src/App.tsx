@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildVals } from './logic/vals';
 import * as helpers from './logic/helpers';
 import * as signing from './logic/signing';
 import * as deposit from './logic/deposit';
 import * as send from './logic/send';
 import * as earn from './logic/earn';
-import { useYieldAccrual } from './hooks/useYieldAccrual';
+import { VAULTS } from './logic/data';
 import type { AppState, Ctl, Props } from './logic/types';
 import TopBar from './components/TopBar';
 import Tabs from './components/Tabs';
@@ -17,8 +17,8 @@ import SigningSheet from './components/SigningSheet';
 
 const INITIAL: AppState = {
   tab:'deposit',
-  depStep:'form', depDigits:'500', depProg:0, depRef:8412,
-  sendStep:1, sndDigits:'1000', pick:'PH', addr:'',
+  depStep:'form', depDigits:'3500', depProg:0, depRef:8412,
+  sendStep:1, sndDigits:'3500', pick:'PH', addr:'',
   elapsed:0, trackProg:0, sndRef:8412, saga:'cfbd94bf', txHash:'', ledger:0,
   pos:{}, vaultDigits:'', vaultPick:'blend',
   sign:null, signState:'ask',
@@ -26,7 +26,7 @@ const INITIAL: AppState = {
   history:[]
 };
 
-const PROPS: Props = { tryPerUsd: 48.7702, spread: 0.005 };
+const PROPS: Props = { mxnPerUsd: 18.35, spread: 0.005 };
 
 export default function App() {
   const [state, setState] = useState<AppState>(INITIAL);
@@ -45,10 +45,10 @@ export default function App() {
   const ctl = useMemo(() => {
     const c: any = { props: PROPS, set };
     Object.defineProperty(c, 'state', { get: () => live.current });
-    Object.defineProperty(c, 'rate', { get: () => PROPS.tryPerUsd ?? 48.7702 });
+    Object.defineProperty(c, 'rate', { get: () => PROPS.mxnPerUsd ?? 18.35 });
     Object.defineProperty(c, 'spread', { get: () => PROPS.spread ?? 0.005 });
-    Object.defineProperty(c, 'minAmt', { get: () => 50 });
-    Object.defineProperty(c, 'maxAmt', { get: () => 3000 });
+    Object.defineProperty(c, 'minAmt', { get: () => 200 });
+    Object.defineProperty(c, 'maxAmt', { get: () => 60000 });
 
     c.n = (val: number, d: number) => helpers.n(c, val, d);
     c.amt = (k: string) => helpers.amt(c, k);
@@ -77,15 +77,36 @@ export default function App() {
     return c as Ctl;
   }, [set]);
 
-  useYieldAccrual();
+  useEffect(() => {
+    const fast = setInterval(() => {
+      set((s: AppState) => {
+        const ids = Object.keys(s.pos);
+        if (!ids.length) return null;
+        const next: Record<string, any> = {};
+        ids.forEach(id => {
+          const p = s.pos[id], vault = VAULTS.find(x => x.id === id);
+          if (!vault) return;
+          next[id] = { amt:p.amt, at:p.at,
+            earned: p.amt * (vault.apy / 100) / 31536000 * ((Date.now() - p.at) / 1000) };
+        });
+        return { pos:next };
+      });
+    }, 90);
+    return () => clearInterval(fast);
+  }, [set]);
 
   const v = buildVals(ctl);
 
   return (
-    <div>
-      <TopBar v={v} />
-      <Tabs v={v} />
-      <div style={{ maxWidth: '1080px', margin: '0 auto',
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <div data-screen-label="Top bar" style={{
+        position: 'sticky', top: 0, zIndex: 40,
+        background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--line)' }}>
+        <TopBar v={v} />
+        <Tabs v={v} />
+      </div>
+      <div style={{ maxWidth: 1080, margin: '0 auto',
         padding: 'var(--sp-7) var(--sp-5) var(--sp-9)', boxSizing: 'border-box' }}>
         {v.isDeposit ? <Deposit v={v} /> : null}
         {v.isSend ? <Send v={v} /> : null}

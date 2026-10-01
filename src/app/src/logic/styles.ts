@@ -42,7 +42,7 @@ export const flat = (ok: boolean) =>
   (ok ? 'background:var(--brand); color:var(--on); border:none;'
       : 'background:var(--surface); color:var(--text); border:1px solid var(--line-strong);');
 
-export const hint = (a: number, ok: boolean, min: number) =>
-  a === 0 ? 'Min \u20BA50 \u00B7 Max \u20BA3,000'
-  : ok ? 'Min \u20BA50 \u00B7 Max \u20BA3,000'
-  : a < min ? 'Minimum \u20BA50' : 'Maximum \u20BA3,000';
+export const hint = (a: number, ok: boolean) =>
+  a === 0 ? 'Min MX$200 · Max MX$60,000'
+  : ok ? 'Min MX$200 · Max MX$60,000'
+  : a < 200 ? 'Minimum MX$200' : 'Maximum MX$60,000';

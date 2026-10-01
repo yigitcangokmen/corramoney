@@ -8,7 +8,7 @@ export function earnedOf(p: Position, apy: number) {
 export function n(ctl: Ctl, v: number, d: number) { return v.toLocaleString('en-US',
   { minimumFractionDigits:d, maximumFractionDigits:d }); }
 
-export function amt(ctl: Ctl, k: string) { return parseInt(ctl.state[k] || '0', 10) || 0; }
+export function amt(ctl: Ctl, k: string) { return parseInt((ctl.state as any)[k] || '0', 10) || 0; }
 
 export function usdc(ctl: Ctl, try_: number) { return try_ / ctl.rate; }
 
