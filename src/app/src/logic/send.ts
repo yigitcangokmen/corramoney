@@ -1,4 +1,5 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { signTransaction } from '@stellar/freighter-api';
 import { horizon, USDC, CORRIDOR_ISSUER, NETWORK_PASSPHRASE } from './stellar';
 import type { Ctl } from './types';
 
@@ -44,10 +45,9 @@ async function sndReal(ctl: Ctl) {
     })).setTimeout(1800).build();
 
     ctl.set({ trackProg:55 });
-    const sr = await window.freighterApi!.signTransaction(tx.toXDR(), {
-      networkPassphrase:NETWORK_PASSPHRASE });
-    const xdr = typeof sr === 'string' ? sr : sr.signedTxXdr;
-    const signedTx = StellarSdk.TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
+    const sr = await signTransaction(tx.toXDR(), { networkPassphrase:NETWORK_PASSPHRASE });
+    if (sr.error) throw new Error(sr.error);
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(sr.signedTxXdr, NETWORK_PASSPHRASE);
 
     ctl.set({ trackProg:75 });
     const result = await horizon.submitTransaction(signedTx as any);

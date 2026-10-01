@@ -53,9 +53,9 @@ function makeCTL(overrides: Partial<AppState> = {}): Ctl {
 }
 
 describe('buildVals wallet state', () => {
-  it('shows Install Freighter when no extension', () => {
+  it('shows Connect Wallet when no extension', () => {
     const v = buildVals(makeCTL());
-    expect(v.connectLabel).toBe('Install Freighter');
+    expect(v.connectLabel).toBe('Connect Wallet');
     expect(v.isConnected).toBe(false);
     expect(v.notConnected).toBe(true);
   });
@@ -95,9 +95,9 @@ describe('buildVals removed mock artifacts', () => {
     expect(v.doConnectFreighter).toBeUndefined();
   });
 
-  it('hasFreighter is false in test env', () => {
+  it('does not expose hasFreighter', () => {
     const v = buildVals(makeCTL());
-    expect(v.hasFreighter).toBe(false);
+    expect(v.hasFreighter).toBeUndefined();
   });
 
   it('does not have reset', () => {

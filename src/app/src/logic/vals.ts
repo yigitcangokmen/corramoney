@@ -28,10 +28,8 @@ export function buildVals(ctl: Ctl): Vals {
 
     isConnected: s.walletMode !== 'none',
     notConnected: s.walletMode === 'none',
-    hasFreighter: typeof window !== 'undefined' && !!window.freighterApi,
     pubkeyShort: s.pubkey ? s.pubkey.slice(0, 4) + '…' + s.pubkey.slice(-4) : '',
-    connectLabel: s.connecting ? 'Connecting...'
-      : (typeof window !== 'undefined' && window.freighterApi) ? 'Connect Wallet' : 'Install Freighter',
+    connectLabel: s.connecting ? 'Connecting...' : 'Connect Wallet',
     connecting: s.connecting,
     doConnect: () => ctl.connect(),
     doDisconnect: () => ctl.disconnect(),

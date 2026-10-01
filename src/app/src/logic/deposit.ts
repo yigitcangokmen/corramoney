@@ -1,4 +1,5 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { signTransaction } from '@stellar/freighter-api';
 import { horizon, USDC, USDC_ISSUER, NETWORK_PASSPHRASE } from './stellar';
 import type { Ctl } from './types';
 
@@ -23,10 +24,9 @@ export async function depSim(ctl: Ctl) {
         fee:'100', networkPassphrase:NETWORK_PASSPHRASE
       }).addOperation(StellarSdk.Operation.changeTrust({ asset:USDC }))
         .setTimeout(30).build();
-      const sr = await window.freighterApi!.signTransaction(ttx.toXDR(), {
-        networkPassphrase:NETWORK_PASSPHRASE });
-      const xdr = typeof sr === 'string' ? sr : sr.signedTxXdr;
-      const signed = StellarSdk.TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
+      const sr = await signTransaction(ttx.toXDR(), { networkPassphrase:NETWORK_PASSPHRASE });
+      if (sr.error) throw new Error(sr.error);
+      const signed = StellarSdk.TransactionBuilder.fromXDR(sr.signedTxXdr, NETWORK_PASSPHRASE);
       await horizon.submitTransaction(signed as any);
     }
     ctl.set({ depProg:60 });
