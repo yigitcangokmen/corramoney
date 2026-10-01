@@ -2,8 +2,15 @@ import * as StellarSdk from '@stellar/stellar-sdk';
 import { horizon, USDC, NETWORK_PASSPHRASE, fundWithFriendbot, getBalances } from './stellar';
 import type { Ctl } from './types';
 
-export async function connectDemo(ctl: Ctl) {
+export async function connect(ctl: Ctl) {
   if (ctl.state.connecting) return;
+  if (typeof window !== 'undefined' && window.freighterApi) {
+    return connectFreighter(ctl);
+  }
+  return connectDemo(ctl);
+}
+
+async function connectDemo(ctl: Ctl) {
   ctl.set({ connecting:true });
   try {
     const kp = StellarSdk.Keypair.random();
@@ -22,23 +29,21 @@ export async function connectDemo(ctl: Ctl) {
     });
     await refreshBalances(ctl);
   } catch(e) {
-    console.error('Demo connect failed:', e);
+    console.error('Connect failed:', e);
     if (ctl.state.connecting) ctl.set({ connecting:false });
   }
 }
 
-export async function connectFreighter(ctl: Ctl) {
-  if (ctl.state.connecting) return;
+async function connectFreighter(ctl: Ctl) {
   ctl.set({ connecting:true });
   try {
-    if (!window.freighterApi) throw new Error('Freighter not found');
-    const r = await window.freighterApi.requestAccess();
+    const r = await window.freighterApi!.requestAccess();
     const pk = typeof r === 'string' ? r : r.address;
     if (!ctl.state.connecting) return;
     ctl.set({ walletMode:'freighter', pubkey:pk, connecting:false });
     await refreshBalances(ctl);
   } catch(e) {
-    console.error('Freighter connect failed:', e);
+    console.error('Connect failed:', e);
     if (ctl.state.connecting) ctl.set({ connecting:false });
   }
 }

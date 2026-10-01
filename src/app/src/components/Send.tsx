@@ -106,14 +106,6 @@ export default function Send({ v }: { v: Vals }) {
           </div>
         ) : null}
 
-        {v.sf3 ? (
-          <div style={css("padding:var(--sp-7) 0; text-align:center")}>
-            <div style={css("display:inline-block; width:48px; height:48px; border-radius:50%; border:3px solid var(--weak-line); border-top-color:var(--brand); animation:dSpin .9s linear infinite")}></div>
-            <div style={css("margin-top:var(--sp-5); font-size:18px; font-weight:600")}>Waiting for your signature</div>
-            <div style={css("margin-top:var(--sp-2); font-size:14px; color:var(--muted)")}>Approve the transaction in your wallet.</div>
-          </div>
-        ) : null}
-
         {v.sf4 ? (
           <div>
             <div style={css("display:flex; align-items:baseline; justify-content:space-between; gap:var(--sp-3); flex-wrap:wrap")}>

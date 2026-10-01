@@ -37,8 +37,7 @@ export interface Ctl {
   rate: number; spread: number; minAmt: number; maxAmt: number;
   trk: ReturnType<typeof setInterval>;
   refreshBalances: () => Promise<void>;
-  connectDemo: () => Promise<void>;
-  connectFreighter: () => Promise<void>;
+  connect: () => Promise<void>;
   disconnect: () => void;
   [key: string]: any;
 }

@@ -29,15 +29,12 @@ export function buildVals(ctl: Ctl): Vals {
     isConnected: s.walletMode !== 'none',
     notConnected: s.walletMode === 'none',
     isDemoWallet: s.walletMode === 'demo',
-    hasFreighter: typeof window !== 'undefined' && !!window.freighterApi,
     pubkeyShort: s.pubkey ? s.pubkey.slice(0, 4) + '…' + s.pubkey.slice(-4) : '',
-    connectLabel: s.connecting ? 'Connecting...' : 'Demo Wallet',
+    connectLabel: s.connecting ? 'Connecting...' : 'Connect Wallet',
     connecting: s.connecting,
-    doConnectDemo: () => ctl.connectDemo(),
-    doConnectFreighter: () => ctl.connectFreighter(),
+    doConnect: () => ctl.connect(),
     doDisconnect: () => ctl.disconnect(),
-    walletTag: s.walletMode === 'demo' ? 'Demo · testnet'
-      : s.walletMode === 'freighter' ? 'Freighter · testnet' : 'Testnet',
+    walletTag: s.walletMode === 'freighter' ? 'Freighter · testnet' : 'Testnet',
 
     tabs: TABS.map(([id, label]) => ({
       label: label,
@@ -55,8 +52,6 @@ export function buildVals(ctl: Ctl): Vals {
     goSend: () => ctl.set({ tab:'send', sendStep:1 }),
     goYield: () => ctl.set({ tab:'yield' }),
     goHistory: () => ctl.set({ tab:'history' }),
-    reset: () => ctl.reset(),
-
     depForm: s.depStep === 'form', depWaiting: s.depStep === 'waiting',
     depClearing: s.depStep === 'clearing', depDone: s.depStep === 'done',
     depText: dep === 0 ? '' : ctl.n(dep, 0),
@@ -79,9 +74,9 @@ export function buildVals(ctl: Ctl): Vals {
     depBack: () => ctl.set({ depStep:'form' }),
     depAgain: () => ctl.set({ depStep:'form' }),
 
-    sf1: s.sendStep === 1, sf2: s.sendStep === 2, sf3: s.sendStep === 3,
+    sf1: s.sendStep === 1, sf2: s.sendStep === 2,
     sf4: s.sendStep === 4, sf5: s.sendStep === 5,
-    stepRail: [1,2,3,4,5].map((i, idx, arr) => {
+    stepRail: [1,2,4,5].map((i, idx, arr) => {
       const done = s.sendStep > i, now = s.sendStep === i;
       return {
         mark: done ? '✓' : String(i),
@@ -163,11 +158,11 @@ export function buildVals(ctl: Ctl): Vals {
       };
     }),
     timings: [
-      ['Quote and signature', 1.6, 1.6], ['Routing', 1.1, 1.1],
-      ['Confirm and submit', 2.5, 2.5], ['A bank wire, for comparison', 72, 0]
+      ['Stellar path payment', s.elapsed, true],
+      ['A bank wire, for comparison', 72, false]
     ].map(([label, v, own]) => ({
-      label: label,
-      val: own ? ctl.n(v as number, 1) + ' s' : '1–3 days',
+      label: label as string,
+      val: own ? ctl.n(v as number, 1) + ' s' : '1--3 days',
       labelColor: own ? 'var(--text)' : 'var(--muted)',
       fill: 'height:100%; border-radius:var(--r-xs); width:' +
         Math.round(((v as number) / 72) * 100) + '%; background:' +

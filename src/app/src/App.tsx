@@ -74,20 +74,9 @@ export default function App() {
     c.vaultGo = () => earn.vaultGo(c);
     c.vaultOut = (id: string) => earn.vaultOut(c, id);
     c.cashOut = () => earn.cashOut(c);
-    c.reset = () => {
-      if (balPollRef.current) clearInterval(balPollRef.current);
-      balPollRef.current = null;
-      earn.reset(c);
-    };
 
-    c.connectDemo = async () => {
-      await wallet.connectDemo(c);
-      if (c.state.walletMode === 'none') return;
-      if (balPollRef.current) clearInterval(balPollRef.current);
-      balPollRef.current = setInterval(() => wallet.refreshBalances(c), 8000);
-    };
-    c.connectFreighter = async () => {
-      await wallet.connectFreighter(c);
+    c.connect = async () => {
+      await wallet.connect(c);
       if (c.state.walletMode === 'none') return;
       if (balPollRef.current) clearInterval(balPollRef.current);
       balPollRef.current = setInterval(() => wallet.refreshBalances(c), 8000);

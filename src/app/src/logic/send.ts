@@ -3,16 +3,8 @@ import { horizon, USDC, CORRIDOR_ISSUER, NETWORK_PASSPHRASE } from './stellar';
 import type { Ctl } from './types';
 
 export function sndSign(ctl: Ctl) {
-  const a = ctl.amt('sndDigits'), c = ctl.corr();
-  const out = ctl.usdc(a) * (1 - ctl.spread) * c.rate;
-  ctl.set({ sendStep:3, saga:ctl.hash().slice(0, 8) });
-  ctl.ask({
-    title:'Send to ' + c.name, op:'strict-receive path payment',
-    dest:ctl.state.addr.slice(0, 6) + '…' + ctl.state.addr.slice(-6),
-    amt:ctl.n(ctl.usdc(a), 2) + ' USDC → ' + c.sym + ctl.n(out, 2),
-    run: () => sndReal(ctl),
-    cancel: () => ctl.set({ sendStep:2 })
-  });
+  ctl.set({ saga:ctl.hash().slice(0, 8) });
+  sndReal(ctl);
 }
 
 async function sndReal(ctl: Ctl) {

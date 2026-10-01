@@ -25,14 +25,8 @@ export default function TopBar({ v }: { v: Vals }) {
             <button onClick={v.doDisconnect} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Disconnect</button>
           </>
         ) : (
-          <>
-            <button onClick={v.doConnectDemo} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--brand); color:var(--on); border:none; border-radius:var(--r-sm); cursor:pointer")}>{v.connectLabel}</button>
-            {v.hasFreighter ? (
-              <button onClick={v.doConnectFreighter} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Freighter</button>
-            ) : null}
-          </>
+          <button onClick={v.doConnect} disabled={v.connecting} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--brand); color:var(--on); border:none; border-radius:var(--r-sm); cursor:pointer")}>{v.connectLabel}</button>
         )}
-        <button onClick={v.reset} style={css("font-size:13px; font-weight:600; padding:var(--sp-2) var(--sp-4); background:var(--surface); color:var(--text); border:1px solid var(--line-strong); border-radius:var(--r-sm); cursor:pointer")}>Reset</button>
       </div>
     </div>
   );

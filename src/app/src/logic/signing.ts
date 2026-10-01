@@ -11,6 +11,6 @@ export function signReject(ctl: Ctl) {
 export function signGo(ctl: Ctl) {
   const sg = ctl.state.sign;
   if (!sg) return;
-  ctl.set({ signState:'busy' });
-  setTimeout(() => { ctl.set({ sign:null, signState:'ask' }); sg.run(); }, 1500);
+  ctl.set({ sign:null, signState:'ask' });
+  sg.run();
 }
