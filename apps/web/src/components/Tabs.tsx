@@ -6,7 +6,7 @@ export default function Tabs({ v }: { v: Vals }) {
   return (
     <div style={css("max-width:1080px; margin:0 auto; padding:0 var(--sp-5) var(--sp-3); box-sizing:border-box; display:flex; gap:var(--sp-2); flex-wrap:wrap")}>
       {(v.tabs || []).map((t: any, i: number) => (
-        <button key={i} onClick={t.go} style={css(t.style)}>{t.label}</button>
+        <button key={i} onClick={t.go} aria-pressed={t.pressed} style={css(t.style)}>{t.label}</button>
       ))}
     </div>
   );

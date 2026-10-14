@@ -26,6 +26,13 @@
   a:hover{ color:var(--green-900); }
   input{ font-family:inherit; }
   button{ font-family:inherit; }
+  :focus-visible{ outline:2px solid var(--brand); outline-offset:2px; }
+  @media (max-width:560px){ [data-hide-narrow]{ display:none !important; } }
+  /* Phones only: let the top bar wrap instead of overflowing. The desktop layout is unchanged. */
+  @media (max-width:560px){
+    [data-topbar]{ height:auto !important; min-height:64px; flex-wrap:wrap; padding:var(--sp-3) var(--sp-5) !important; row-gap:var(--sp-3) !important; }
+    [data-topbar-right]{ flex-wrap:wrap; justify-content:flex-end; row-gap:var(--sp-2) !important; }
+  }
 
   @keyframes dSpin{ to{ transform:rotate(360deg) } }
   @keyframes dRise{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:none } }

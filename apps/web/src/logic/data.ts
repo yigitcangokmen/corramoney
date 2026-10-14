@@ -13,11 +13,15 @@ export const CORR = [
   { iso:'TH', name:'Thailand',    cur:'THB', sym:'฿', rate:33.00 }
 ];
 
+// Earn is hidden until it routes deposits straight into Blend / DeFindex contracts.
 export const TABS: [string, string][] = [
-  ['deposit', 'Deposit'], ['send', 'Send'],
-  ['yield', 'Earn'], ['history', 'History']
+  ['send', 'Send'], ['history', 'History']
 ];
 
-export const TRACK = [
-  'Debiting your balance', 'Routing the payment', 'Submitting to Stellar', 'Completed'
+/** The saga's states as the sender sees them. */
+export const SAGA_STEPS: [string, string, string][] = [
+  ['SIGNED', 'Signed in your wallet', 'Held by Corra as a fully bound blob. No key ever left your device.'],
+  ['CASH_IN', 'Cash-in confirmed', 'The anchor credited TESTMXN to your account, verified on chain.'],
+  ['ONCHAIN', 'Submitted to Stellar', 'Your pre-signed path payment, fee paid by Corra.'],
+  ['CREDITED', 'Recipient credited', 'Settled atomically through the USDC hub.']
 ];

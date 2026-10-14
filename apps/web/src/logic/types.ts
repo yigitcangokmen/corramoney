@@ -1,3 +1,5 @@
+import type { PaymentEvent, PaymentWire, QuoteWire } from '@corra/shared';
+
 export interface Position { amt: number; at: number; earned: number }
 
 export interface Entry {
@@ -13,10 +15,25 @@ export interface Sign {
 
 export interface AppState {
   tab: string;
-  depStep: string; depDigits: string; depProg: number; depRef: number;
-  sendStep: number; sndDigits: string; pick: string; addr: string;
-  elapsed: number; trackProg: number; sndRef: number; saga: string;
-  txHash: string; ledger: number;
+  pick: string; addr: string;
+  remitStep: 'form' | 'review' | 'cashin' | 'track';
+  destDigits: string;
+  quote: QuoteWire | null;
+  /** The anchor's SEP-38 firm quote for the cash-in leg, passed to Corra unchanged. */
+  anchorQuote: { id: string; expiresAt: number; price: string; sellAmount: string; sellAsset: string } | null;
+  setupDone: boolean;
+  anchorToken: string | null; anchorTokenExp: number;
+  payment: (PaymentWire & { events: PaymentEvent[] }) | null;
+  cashInUrl: string | null;
+  remitBusy: string | null; remitError: string | null;
+  /** Why live tracking of the payment on screen stopped (404, orchestrator unreachable). */
+  trackError: string | null;
+  /** The browser blocked the deposit popup; show the link instead. */
+  popupBlocked: boolean;
+  /** The new payment needs no new deposit: the earlier cash-in already covers it. */
+  depositSkipped: boolean;
+  /** Freighter is not installed in this browser. */
+  freighterMissing: boolean;
   pos: Record<string, Position>;
   vaultDigits: string; vaultPick: string;
   sign: Sign | null; signState: string;

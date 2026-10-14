@@ -1,16 +1,22 @@
 {
-  "name": "corra-demo",
+  "name": "@corra/web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build:prod": "tsc && VITE_ORCHESTRATOR_URL=https://api.corra.money VITE_ANCHOR_DOMAIN=anchor.corra.money VITE_CLIENT_DOMAIN=api.corra.money vite build"
   },
   "dependencies": {
+    "@corra/shared": "workspace:^",
+    "@corra/stellar": "workspace:^",
     "@stellar/freighter-api": "^6.0.1",
-    "@stellar/stellar-sdk": "^12.3.0",
+    "@stellar/stellar-sdk": "^17.2.1",
+    "@stellar/typescript-wallet-sdk": "^5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
