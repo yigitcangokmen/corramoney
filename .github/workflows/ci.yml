@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: corra, POSTGRES_PASSWORD: corra, POSTGRES_DB: corra }
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd "pg_isready -U corra" --health-interval 2s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgres://corra:corra@localhost:5434/corra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r test
+
+  no-server-side-signing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Scan every server-reachable module
+        run: pnpm no-server-side-signing
+      - name: Prove the scan fails on a violating module
+        run: |
+          mkdir -p "$RUNNER_TEMP/fixture"
+          printf '%s\n' \
+            "import * as S from '@stellar/stellar-sdk';" \
+            "const k = S.Keypair.fromSecret(process.env.USER_SECRET!);" \
+            "export const relay = (tx: S.Transaction) => { tx.sign(k); return tx; };" > "$RUNNER_TEMP/fixture/bad.ts"
+          out=$(pnpm exec tsx scripts/no-server-side-signing.ts "$RUNNER_TEMP/fixture" 2>&1) && {
+            echo "the scan passed a module that loads and signs with a user key"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -q 'bad.ts:2 loads a key' || { echo "the scan failed, but not on the key load"; exit 1; }
+          echo "$out" | grep -q 'bad.ts:3 signs outside the allowed modules' || { echo "the scan missed the signature"; exit 1; }
+      - name: Sponsor key refusals (fee-bump and sponsorship scope)
+        run: pnpm --filter @corra/stellar test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @corra/web --filter @corra/landing build

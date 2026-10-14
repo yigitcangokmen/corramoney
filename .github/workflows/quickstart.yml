@@ -1,0 +1,58 @@
+name: Quickstart (testnet)
+
+# From a clean clone, the documented commands bring up Postgres, the anchor and the orchestrator, create a
+# fresh set of testnet accounts, and drive one payment through to CREDITED. Hits the real
+# Stellar testnet, so it runs on main, nightly and on demand rather than on every PR.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  quickstart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Start Postgres
+        run: docker compose up -d --wait postgres
+
+      - name: Create testnet accounts, assets, orderbooks and SACs
+        run: pnpm seed-testnet
+
+      - name: Deliverable 1 mechanics on chain (sponsored setup, sign-before-cash-in, fee-bump, cap exceeded, expiry)
+        run: pnpm onchain-check
+
+      - name: Start the anchor (Anchor Platform + business server)
+        run: |
+          pnpm exec tsx infra/anchor/setup.ts
+          docker compose -f infra/anchor/docker-compose.yml up -d --build
+          for i in $(seq 1 120); do curl -sf http://localhost:8080/.well-known/stellar.toml > /dev/null && exit 0; sleep 2; done
+          docker compose -f infra/anchor/docker-compose.yml logs platform | tail -80; exit 1
+
+      - name: Start the orchestrator
+        run: |
+          ANCHOR_HOME_DOMAIN=http://localhost:8080 nohup pnpm --filter @corra/orchestrator start > orchestrator.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8787/health && exit 0; sleep 1; done
+          cat orchestrator.log; exit 1
+
+      - name: Real cash-in through the anchor (SEP-10 with client_domain, SEP-24, signed callback)
+        run: pnpm anchor-check
+
+      - name: Drive one payment to CREDITED through the API and the anchor
+        run: pnpm drive-payment
+
+      - name: Logs
+        if: always()
+        run: |
+          cat orchestrator.log || true
+          docker compose -f infra/anchor/docker-compose.yml logs --tail 60 anchor-business platform || true
