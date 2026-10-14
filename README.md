@@ -7,6 +7,7 @@
 Corra is a **non-custodial cross-border remittance app on Stellar**.
 Send local cash in one country, your recipient gets local cash in another, and nobody ever sees the word "crypto."
 
+[![CI](https://github.com/yigitcangokmen/corramoney/actions/workflows/ci.yml/badge.svg)](https://github.com/yigitcangokmen/corramoney/actions/workflows/ci.yml)
 [![Try the app](https://img.shields.io/badge/try%20the%20app-app.corra.money-0E8546)](https://app.corra.money)
 [![Website](https://img.shields.io/badge/corra.money-0B1437)](https://corra.money)
 [![Stellar](https://img.shields.io/badge/Stellar-testnet-7B3FE4)](https://stellar.org)
@@ -19,15 +20,42 @@ Send local cash in one country, your recipient gets local cash in another, and n
 
 ## Try the app
 
-**[app.corra.money](https://app.corra.money)** -- deposit MXN, pick a corridor, send money, watch it settle. The full flow from cash-in to payout in four tabs.
+**[app.corra.money](https://app.corra.money)** -- fix what the recipient gets, sign once in Freighter, pay in pesos at the anchor, close the tab. Corra submits the payment you already signed once your cash-in lands on chain.
 
 ```
-MXN 3,500  ->  USDC  ->  PHP 3,066      six corridors, one integration
+TESTMXN  ->  USDC  ->  TESTPHP      strict-receive, capped by the sendMax you signed
 ```
 
-Deposit, send across corridors (Philippines, Brazil, Argentina, Indonesia, Thailand), earn yield on idle balances, and review every step in the transaction history.
+Five corridors from Mexico (Philippines, Brazil, Argentina, Indonesia, Thailand). Every step of every payment links to its transaction on stellar.expert.
 
-**Corra's server never holds a private key.** It builds an unsigned transaction, your browser signs it, and the server only relays the signed XDR onward. Details in [Non-custodial by design](#non-custodial-by-design).
+**Corra never holds a user's key.** Your wallet signs; the orchestrator holds only a fully bound signed transaction and can submit it or not. Details in [Non-custodial by design](#non-custodial-by-design). Proof index: [EVIDENCE.md](EVIDENCE.md).
+
+## Run it yourself
+
+Node 22, pnpm 9, Docker.
+
+```bash
+pnpm install
+docker compose up -d --wait postgres                       # the ledger
+pnpm seed-testnet                                          # issuer, 6 corridor tokens + USDC, market-maker orderbooks, SACs
+pnpm onchain-check                                         # Deliverable 1 mechanics on testnet, incl. cap-exceeded and expiry
+pnpm exec tsx infra/anchor/setup.ts
+docker compose -f infra/anchor/docker-compose.yml up -d --build   # SDF Anchor Platform + the anchor's business server
+ANCHOR_HOME_DOMAIN=http://localhost:8080 pnpm --filter @corra/orchestrator start
+pnpm drive-payment                                         # one payment through the API and the anchor to CREDITED
+pnpm --filter @corra/web dev                               # the app, against your local orchestrator
+```
+
+The same commands run in CI: [`quickstart.yml`](.github/workflows/quickstart.yml) from a clean clone, and [`ci.yml`](.github/workflows/ci.yml) with the `no-server-side-signing` job.
+
+| Path | What it is |
+|---|---|
+| `apps/web` | The sender app. Builds and signs in the browser; SEP-10 and SEP-24 through the wallet SDK. |
+| `services/orchestrator` | `/quote`, `/confirm`, saga, submit-on-confirm, reconciler, Postgres ledger. |
+| `packages/settlement-saga` | The extractable saga another Stellar wallet can lift ([README](packages/settlement-saga/README.md)). |
+| `packages/stellar` | Strict-receive construction, bound-transaction check, sponsor key scope, Horizon gateway. |
+| `packages/shared` | Money (bigint, never floats), assets, corridors, wire format. |
+| `services/anchor-business`, `infra/anchor` | The test anchor's side: Anchor Platform config and its business server. Not Corra. |
 
 ---
 
@@ -53,9 +81,9 @@ Corra depends on the ecosystem's existing pieces and writes none of them. This i
 
 | Concern | What we use | Lines we write |
 |---|---|---|
-| SEP-1 / SEP-10 / SEP-12 / SEP-24 | [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) (SDF) | none |
+| SEP-1 / SEP-10 / SEP-24 / SEP-38 | [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) (SDF) | none |
 | Transactions, Horizon, path payments | [`@stellar/stellar-sdk`](https://github.com/stellar/js-stellar-sdk) (SDF) | none |
-| Wallet connection and signing | [`@creit.tech/stellar-wallets-kit`](https://github.com/Creit-Tech/Stellar-Wallets-Kit) | none |
+| Wallet connection and signing | Freighter via [`@stellar/freighter-api`](https://github.com/stellar/freighter) | none |
 | FX routing | Stellar DEX path-finding | none |
 
 We do not implement a SEP client, and we do not wrap the SEPs in a parallel abstraction of our own.
@@ -77,24 +105,31 @@ sequenceDiagram
     participant H as Stellar
 
     U->>O: request a quote
-    O->>U: unsigned XDR<br/>(strict-receive, sendMax cap, timebound)
-    Note over U: signs locally. The key never leaves the browser.
+    O->>U: quote (route, sendMax cap)
+    Note over U: builds the strict-receive transaction<br/>(sendMax cap, timebound) and signs it in the wallet.<br/>The key never leaves the browser.
     U->>O: signed XDR
-    Note over O: waits for cash-in to confirm
-    O->>H: submit the signed transaction
+    Note over O: checks the signed XDR matches the quote,<br/>then waits for cash-in to confirm
+    O->>H: submit the signed transaction (fee-bumped)
     H->>O: tx hash
 ```
 
-Corra signs nothing with a user's key, and that is the invariant worth stating precisely rather than as a false absolute. **There is exactly one server-side key that touches a user's transaction: the fee-and-sponsor account.** CAP-15 fee-bump requires the fee source to sign the envelope, and CAP-33 sponsorship requires the sponsor to sign `BeginSponsoringFutureReserves`, so that signature is unavoidable if the sender is to need no XLM. It signs only fee-bump envelopes and `BeginSponsoringFutureReserves`, it pays network fees and base reserves, and it can move no user value.
+The browser builds the strict-receive transaction itself ([`apps/web/src/logic/remit.ts`](apps/web/src/logic/remit.ts), `buildStrictReceive`). The orchestrator never builds the payment: it checks that the signed XDR matches the quote (`assertBoundPayment` in [`packages/stellar/src/validate.ts`](packages/stellar/src/validate.ts)) and refuses it otherwise.
 
-The CI job that enforces this is named **`no-server-side-signing`**, and it prints the exact scope it asserts so the name can never be read as broader than the check. On every run it fails the build if any of these is violated:
+Corra signs nothing with a user's key, and that is the invariant worth stating precisely rather than as a false absolute. **The server holds two keys of its own, and neither can sign for a user or move user value:**
 
-- no module loads, derives, or signs with a key belonging to a user
-- no server response or log line contains a seed-shaped `S[A-Z2-7]{55}`
-- the fee-and-sponsor account never appears as a source or destination in any `payment` or `path_payment_*` operation
-- the fee-and-sponsor account signs nothing except fee-bump envelopes and `BeginSponsoringFutureReserves`
+- **The fee-and-sponsor account**, confined to [`packages/stellar/src/sponsor.ts`](packages/stellar/src/sponsor.ts). CAP-15 fee-bump requires the fee source to sign the envelope, and CAP-33 sponsorship requires the sponsor to sign the setup transaction that opens `BeginSponsoringFutureReserves`, so that signature is unavoidable if the sender is to need no XLM. It signs only fee-bump envelopes around a payment the sender already signed, and sponsorship setup transactions of a fixed shape. It pays network fees and base reserves.
+- **Corra's SEP-10 client_domain `SIGNING_KEY`**, in [`services/orchestrator/src/client-domain.ts`](services/orchestrator/src/client-domain.ts). It co-signs the anchor's SEP-10 login challenge so the anchor can attribute the session to Corra. A challenge has sequence 0 and can never be submitted.
 
-The last two are what make the first two meaningful. A job that only asserted "no signing anywhere" would be asserting something the protocol makes impossible, and would have to be either disabled or quietly narrowed the first time sponsorship was wired up.
+The CI job that enforces this is named **`no-server-side-signing`** ([`scripts/no-server-side-signing.ts`](scripts/no-server-side-signing.ts)), and it prints the exact scope it asserts so the name can never be read as broader than the check. It parses every non-test module under `services/orchestrator/src`, `packages/stellar/src`, `packages/settlement-saga/src` and `packages/shared/src`, and fails the build if:
+
+- a `Keypair` is loaded (`fromSecret`, `fromRawEd25519Seed`, `random`, `master`) or a signing call (`sign`, `signTransaction` and similar) is made outside `sponsor.ts` and `client-domain.ts`
+- a string literal in that code is seed-shaped (`S[A-Z2-7]{55}`)
+- the fee-sponsor secret is referenced anywhere except `config.ts` and `index.ts`, or `index.ts` uses it for anything but `createSponsor()`
+- `sponsor.ts` has other than 2 signing call sites, or `client-domain.ts` other than 1
+
+The same job then runs the scanner on a fixture that loads and signs with a key, and fails unless the scanner catches both lines. Finally it runs the `@corra/stellar` unit tests, which check that the sponsor key refuses a fee-bump or setup outside its scope. The scanner is a static check of the source. It does not inspect responses or logs at runtime, and the refusals to touch value are asserted by those unit tests, not by the scanner.
+
+A job that asserted "no signing anywhere" would be asserting something the protocol makes impossible, and would have to be either disabled or quietly narrowed the first time sponsorship was wired up.
 
 This is not only a security posture, it is what makes the architecture legally coherent: the regulated legs (cash-in, cash-out, customer KYC) stay entirely with the licensed anchor, and Corra is an interface and an orchestrator that never touches user funds.
 
@@ -116,14 +151,17 @@ stateDiagram-v2
     SIGNED --> CASH_IN: cash-in confirmed AND verified on chain
     SIGNED --> EXPIRED: timebound passed before cash-in
     CASH_IN --> ONCHAIN: submit the signed XDR
-    ONCHAIN --> CREDITED: settles atomically
+    CASH_IN --> EXPIRED: submission landed after maxTime
+    ONCHAIN --> CREDITED: settles atomically, payout handler acknowledged
     ONCHAIN --> CAP_EXCEEDED: over sendMax, nothing moved
+    ONCHAIN --> FAILED: landed failed for another reason
     CREDITED --> [*]
     EXPIRED --> [*]
     CAP_EXCEEDED --> [*]
+    FAILED --> [*]
 ```
 
-`EXPIRED` leaves from `SIGNED`, not from `ONCHAIN`: a transaction whose timebound passed never enters a ledger at all. `CASH_IN` is never entered on the anchor callback alone, the deposit is independently confirmed from chain state first. And the two terminal exits do not loop back, re-signing opens a **new** saga that references the old one by id, so the ledger keeps one row per signed transaction.
+`EXPIRED` leaves from `SIGNED` or `CASH_IN`, never from `ONCHAIN`: a transaction whose timebound passed never enters a ledger at all. `CASH_IN` is never entered on the anchor callback alone, the deposit is independently confirmed from chain state first. And the terminal exits do not loop back, re-signing opens a **new** saga that references the old one by id, so the ledger keeps one row per signed transaction.
 
 Design notes are published in [`/docs`](docs):
 
@@ -147,13 +185,14 @@ The demo is honest about its own boundaries, and the page labels each step:
 | Leg | Status |
 |---|---|
 | `MXN -> USDC -> PHP` path payment | **real**, on Stellar testnet, verifiable by hash |
-| Client-side signing, keyless server | **real**, asserted by tests |
-| Cash-in at the kiosk, cash-out in Manila | **simulated**, no anchor is integrated yet |
+| Client-side signing, no user key on the server | **real**, asserted by the `no-server-side-signing` job and unit tests |
+| Cash-in | **real protocol, our anchor**: SEP-10, SEP-24 and SEP-38 against a self-hosted SDF Anchor Platform at `anchor.corra.money`; the SPEI transfer behind it is simulated |
+| Cash-out in Manila | **mock** payout handler; no fiat moves |
 | DEX liquidity | **self-seeded** on testnet, not an open market |
 
-The demo sender is a throwaway testnet account whose key ships to the browser on purpose, so anyone can click without installing a wallet. It carries a bounded balance and no real value.
+The sender signs in their own Freighter wallet; no key is generated or shipped to the browser. To send without setting up a second wallet, the app offers a public demo recipient account (`demoRecipient` in [`packages/shared/src/testnet.ts`](packages/shared/src/testnet.ts), created by `pnpm demo-recipient`). It holds a trustline for every destination asset and its secret was discarded, so it only ever receives.
 
-**No real anchor is integrated yet.** Securing one is BD work, not engineering, and it depends on third parties saying yes. Until then this demonstrates a mechanism, not a live corridor.
+**No third-party anchor is integrated yet.** Securing one is BD work, not engineering, and it depends on third parties saying yes. Until then this demonstrates a mechanism, not a live corridor.
 
 ---
 
@@ -184,7 +223,7 @@ This is why Corra scopes carefully. Liquidity on paper is not an integratable ra
 |---|---|
 | Language | TypeScript, end to end |
 | Stellar | `@stellar/stellar-sdk`, `@stellar/typescript-wallet-sdk` |
-| Signing | `@creit.tech/stellar-wallets-kit` (client-side only) |
+| Signing | Freighter via `@stellar/freighter-api` (client-side only) |
 | Orchestrator | Node.js + Fastify |
 | Database | Postgres (saga state + append-only event log) |
 | Frontend | React + Vite |

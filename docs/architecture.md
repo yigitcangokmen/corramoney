@@ -5,9 +5,9 @@
 | Decision | Choice | Outcome |
 |---|---|---|
 | **User keys** | **None, anywhere.** | The sender signs the payment in their own wallet. No user key is generated, stored, escrowed or recovered by anything Corra runs. |
-| **Server keys** | **Exactly one: the fee-and-sponsor account.** | CAP-15 fee-bump requires the fee source to sign, and CAP-33 requires the sponsor to sign `BeginSponsoringFutureReserves`. That signature is unavoidable if the sender is to need no XLM. It signs nothing else and can move no user value. |
+| **Server keys** | **Two: the fee-and-sponsor account and Corra's SEP-10 client_domain `SIGNING_KEY`.** | CAP-15 fee-bump requires the fee source to sign, and CAP-33 requires the sponsor to sign the sponsorship setup. That signature is unavoidable if the sender is to need no XLM. The client_domain key co-signs only sequence-0 SEP-10 challenges so the anchor can attribute the session to Corra. Neither signs for a user or can move user value. |
 | **Recipient** | **Their own Stellar account** | Funds land in an account only the recipient can sign for. `CREDITED` is a safe terminal state. |
-| **Cash-in** | **A self-hosted SDF Anchor Platform** | It issues the MXN test asset. No third-party anchor can credit a token minted by our own testnet issuer, so this is structural, not a preference. `testanchor.stellar.org` is kept as a conformance check. |
+| **Cash-in** | **A self-hosted SDF Anchor Platform** | It issues the MXN test asset. No third-party anchor can credit a token minted by our own testnet issuer, so this is structural, not a preference. It runs as SDF Anchor Platform 4.8.0 at `anchor.corra.money` (`infra/anchor`, `deploy/`). |
 | **Pricing** | **SEP-38 integration is real; the instance is ours** | No testnet anchor quotes MXN or PHP, so the corridor rate comes from orderbooks our market-maker seeds. v1 demonstrates routing and ordering, not price discovery. |
 
 **Design principle:** the path payment is a commodity and we treat it as one. What we build is the part no existing building block provides: driving an *asynchronous* payment without holding a user's key, and the ledger and failure handling around it.
@@ -20,7 +20,7 @@
 [ Client / App ]   sender + recipient view · builds and signs locally · never says "crypto"
         │
 [ Corra Orchestrator ]
-   ├─ /quote + /confirm   passes the anchor's SEP-38 quote through unchanged
+   ├─ /quote + /confirm   route + cap; /confirm records the browser's SEP-38 quote unchanged
    ├─ PaymentSaga         QUOTED · SIGNED · CASH_IN · ONCHAIN · CREDITED
    ├─ Submit-on-confirm   submits the already-signed XDR once cash-in is verified on chain
    ├─ Reconciler          rebuilds saga state from the chain; creates no new state
@@ -31,15 +31,15 @@
 [ Stellar testnet ] DEX liquidity · USDC hub
 ```
 
-**There is no quote engine in this diagram, and that is deliberate.** `/quote` asks the anchor's SEP-38 quote server and carries its `id` and `expiry` through untouched; the corridor leg comes from the SDK's path-finding. We do not compute a rate, and we do not invent a quote format.
+**There is no quote engine in this diagram, and that is deliberate.** `/quote` returns the corridor route from the SDK's path-finding and the `sendMax` cap. The anchor's SEP-38 firm quote is requested by the **browser**, with the sender's own SEP-10 session (`firmQuote` in `apps/web/src/logic/anchor.ts`), because a firm quote needs the user's SEP-10 JWT and Corra never holds user sessions server-side. `/confirm` then records its `id` and expiry on the payment unchanged. We do not compute a rate, and we do not invent a quote format.
 
-**There is no keystore either.** The one key the orchestrator holds is the fee-and-sponsor account, kept in the deployment's secret store, and its use is bounded to two operation types.
+**There is no keystore either.** The orchestrator holds two keys, both kept in the deployment's secret store: the fee-and-sponsor account, bounded to fee-bump envelopes and sponsorship setups (`packages/stellar/src/sponsor.ts`), and the client_domain `SIGNING_KEY`, bounded to SEP-10 challenge co-signatures (`services/orchestrator/src/client-domain.ts`).
 
 ---
 
 ## 2. Anchor integration: what we depend on, what we write
 
-We do not define an abstraction over the SEPs. SEP-1, SEP-10, SEP-12, SEP-24 and SEP-38 are consumed through SDF's [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) as a declared dependency, and we write no SEP client code.
+We do not define an abstraction over the SEPs. SEP-1, SEP-10, SEP-24 and SEP-38 are consumed, in the browser, through SDF's [`@stellar/typescript-wallet-sdk`](https://github.com/stellar/typescript-wallet-sdk) as a declared dependency, and we write no SEP client code.
 
 ```ts
 import { Wallet } from '@stellar/typescript-wallet-sdk'
@@ -51,7 +51,7 @@ const deposit = await anchor.sep24().deposit({ ... })
 
 Swapping anchors is changing `homeDomain`. That is the SDK's design, not something we add. **There is no `AnchorAdapter`-shaped interface here**, and writing one before a second anchor exists would be inventing a seam to fit a future we have not met.
 
-**Which anchor, and why it is ours.** The primary cash-in path is SDF's Anchor Platform reference deployment, run in Docker and configured to issue the MXN test asset. `testanchor.stellar.org` cannot serve this corridor: it deposits only the assets it supports, and no third-party anchor will ever credit a token minted by our own issuer. It is still used once, as a conformance check that our SEP-10, SEP-24 and callback-signature code works against an implementation we did not write.
+**Which anchor, and why it is ours.** The cash-in path is SDF's Anchor Platform 4.8.0, run in Docker (`infra/anchor` locally, `deploy/` for `anchor.corra.money`) and configured to issue the MXN test asset, with a small business server (`services/anchor-business`) that simulates the SPEI transfer. `testanchor.stellar.org` cannot serve this corridor: it deposits only the assets it supports, and no third-party anchor will ever credit a token minted by our own issuer. There is no separate conformance run against it.
 
 The honest consequence: because we run that instance, the cash-in confirmation and the SEP-38 quote behind it are ours. What this demonstrates is the protocol integration and the ordering, not an independent counterparty.
 
@@ -79,8 +79,8 @@ There is no withdraw step in v1. The cash-out leg is a mock payout handler, so `
 
 **Failure branches, and what each actually costs:**
 
-- **Source cost moves past `sendMax`** -> the operation fails with `op_over_sendmax` and the transaction lands in a ledger as failed. Nothing moves. The sender still holds the deposited asset in their own account, so **no refund leg runs**. The fee and the sequence number are consumed, so the signed blob is spent and a retry is a new saga.
-- **The 30-minute timebound expires before cash-in confirms** -> the transaction never enters a ledger at all. The saga is `EXPIRED` and the sender is asked to sign again. Never silently stuck.
+- **Source cost moves past `sendMax`** -> the operation fails with `op_over_source_max` and the transaction lands in a ledger as failed. Nothing moves. The sender still holds the deposited asset in their own account, so **no refund leg runs**. The fee and the sequence number are consumed, so the signed blob is spent and a retry is a new saga.
+- **The 30-minute timebound expires before cash-in confirms** -> the transaction never enters a ledger at all. The saga is `EXPIRED` and the sender is asked to sign again. A deposit that already arrived is reused by the re-signed payment. Never silently stuck.
 - **The cash-in callback is lost** -> the reconciler reads the deposit from chain state and advances the saga. A lost callback costs a delay, not a stuck payment.
 
 Re-signing never revives a terminal saga. It opens a new one whose `supersedes_id` points at the old, so the ledger keeps one row per signed transaction.
@@ -89,10 +89,10 @@ Re-signing never revives a terminal saga. It opens a new one whose `supersedes_i
 
 ## 4. Stellar layer: concrete testnet details
 
-- **No user key, one server key.** The orchestrator never calls `Keypair.fromSecret` on a user's key and never signs for a user. The fee-and-sponsor account signs fee-bump envelopes and `BeginSponsoringFutureReserves`, nothing else, and never appears as a source or destination in a `payment` or `path_payment_*`.
+- **No user key, two server keys.** The orchestrator never calls `Keypair.fromSecret` on a user's key and never signs for a user. The fee-and-sponsor account signs fee-bump envelopes and sponsorship setups, nothing else, and refuses a fee-bump in which it is a source or destination of any operation. The client_domain key co-signs SEP-10 challenges only.
 - **Pre-signed transaction:** `pathPaymentStrictReceive` with a `sendMax` cap and a 30-minute `maxTime`, signed client-side and held as an XDR until cash-in is confirmed. Two costs are accepted and handled: it pins a sequence number, and it can expire.
 - **`minSeqNum` (CAP-21)** keeps the pre-signed transaction valid across a sequence range instead of one exact value. It widens the window; it does not remove it. If the sender's account transacts past that range during the wait, the transaction is permanently dead and routes to the re-sign path.
-- **Account setup:** friendbot funding, trustlines opened under **sponsored reserves** so the user needs no XLM. Sponsorship is a sandwich, and the sponsored account must authorise the closing half, so the sender signs twice in the flow: once for setup, once for the payment.
+- **Account setup:** the sender's account is created by the sponsor with a 0 XLM balance and its trustlines opened under **sponsored reserves** (CAP-33), so the user needs no XLM at any point; friendbot funds only team infrastructure accounts. Sponsorship is a sandwich, and the sponsored account must authorise the closing half, so setup is its own one-time wallet prompt. The payment itself is signed once.
 - **USDC hub + market-maker:** a market-maker account seeds MXN/USDC and USDC/PHP offers on the testnet DEX. Without it the path payment has nothing to match against. A testnet setup step, not a product feature, and the reason the corridor rate is ours.
 - **Path payment:** route found via `/paths/strict-receive`. The recipient amount is fixed by strict-receive; volatility falls on the source side, bounded by `sendMax`.
 - **Reconciliation:** every payment carries an idempotency id. The reconciler runs over this instance's own pending payments only, reads the authoritative fact from Horizon, and advances the saga to match. **The chain outranks the ledger.** Retrying submission is safe because Stellar consumes the sequence number on the first successful submission and rejects every later resubmission of the same blob.
@@ -101,15 +101,15 @@ Re-signing never revives a terminal saga. It opens a new one whose `supersedes_i
 
 ## 5. Proposed repository layout
 
-A monorepo (pnpm + turbo), end-to-end **TypeScript**:
+A pnpm monorepo, end-to-end **TypeScript**:
 
 ```
-apps/web                 sender + recipient view; builds and signs locally
-services/orchestrator    /quote + /confirm, saga, submit-on-confirm, reconciler, ledger
+apps/web                 sender app; builds and signs locally; SEP-10/24/38 via the wallet SDK
+services/orchestrator    /quote + /confirm, SEP-24 callback verifier, client_domain signer, Postgres ledger
+services/anchor-business the test anchor's business server (not Corra)
 packages/settlement-saga the extractable module another wallet can lift
-packages/anchors         wallet-SDK usage and the SEP-24 callback verifier
-packages/stellar         trustlines, path-payment construction, market-maker, Horizon reads
-packages/shared          types: Money, Quote, Corridor, AssetId
+packages/stellar         strict-receive construction, bound-transaction check, sponsor key, Horizon gateway
+packages/shared          types: Money, Quote, Corridor, AssetId, wire format
 ```
 
 DB: Postgres (saga state + timeline).
@@ -134,7 +134,7 @@ Passkey and Soroban smart-wallet signing is **not** a drop-in: a contract addres
 
 - **The 30-minute window bounds this to fast cash-in.** The design assumes cash-in confirms inside the signature window, which holds for instant rails and for a local anchor instance. Slower rails such as a bank transfer or an OXXO cash deposit exceed it and fall to the re-sign path. Widening the window without weakening the cap is Phase 2 work and is not solved here.
 - **The orchestrator can decline to submit.** That is indistinguishable from expiry and costs the sender nothing, since funds never left their account. The signed XDR is also returned to the sender's browser, so they can submit it to any Horizon themselves. Because the inner transaction relies on Corra's fee-bump, doing so requires their own XLM or their own fee-bump wrapper, so the escape hatch is real but not free.
-- **The public demo currently ships a throwaway key.** It generates a testnet account server-side and sends the secret to the browser so a reviewer can click without installing a wallet. That is a custodial shortcut, it is disclosed, and Week 1 removes it.
+- **No throwaway key.** The earlier demo at test.corra.money generated a testnet account server-side and sent its secret to the browser so a reviewer could click without a wallet; that custodial shortcut is gone. The app in this repo (`apps/web`, served at app.corra.money) requires the sender's own Freighter wallet, and no key is generated, sent or stored anywhere.
 
 ---
 
@@ -143,7 +143,7 @@ Passkey and Soroban smart-wallet signing is **not** a drop-in: a contract addres
 | Question | Decision | Rationale |
 |---|---|---|
 | **App framework** | **React + Vite (SPA)** | Signing happens in the client, so it must be a real client and not an SSR surface. The orchestrator is a separate Fastify service. |
-| **Quote** | **SEP-38 firm quote from the anchor, passed through unchanged** | We add only the saga identifier and the `sendMax` the sender signs. The corridor leg comes from path-finding over seeded orderbooks, and that is stated wherever the claim is made. |
+| **Quote** | **SEP-38 firm quote from the anchor, requested by the browser, recorded unchanged** | The browser requests it with the sender's own SEP-10 session; `/confirm` records it. We add only the saga identifier and the `sendMax` the sender signs. The corridor leg comes from path-finding over seeded orderbooks, and that is stated wherever the claim is made. |
 | **Signing timing** | **Sign before cash-in, submit after** | A remittance is asynchronous: cash-in confirms after the sender has left. Signing up front is what removes the need for custody. |
 | **Timebound length** | **30 minutes** | Long enough for an instant rail and a local anchor, short enough that a stale signed transaction cannot linger. A slow rail needs a re-sign notification path, which is Phase 2. |
 | **Ledger schema** | **`payments` + `legs` + append-only `payment_events`** | State lives in `payments`/`legs`; the timeline is fed from the event log. Full event-sourcing is overkill. |
@@ -157,12 +157,13 @@ Passkey and Soroban smart-wallet signing is **not** a drop-in: a contract addres
 flowchart TB
     App["Client App<br/>builds and SIGNS locally"]
     subgraph Core["Corra Orchestrator"]
-        API["/quote + /confirm<br/>anchor quote passed through"]
+        API["/quote + /confirm<br/>anchor quote recorded unchanged"]
         SAGA["PaymentSaga"]
         SUB["Submit-on-confirm"]
         REC["Reconciler<br/>reads chain state"]
         LED[("Ledger DB<br/>payments · legs · events")]
-        FEE["fee-and-sponsor<br/>the one server key"]
+        FEE["fee-and-sponsor key<br/>fee-bump + sponsorship"]
+        CD["client_domain key<br/>SEP-10 co-signature"]
     end
     SDK["@stellar/typescript-wallet-sdk<br/>SEP-10/24/38"]
     STL["@stellar/stellar-sdk<br/>build · submit"]
@@ -175,7 +176,8 @@ flowchart TB
     SAGA --> SUB
     REC --> SAGA
     App -- "signed XDR, no key" --> API
-    SAGA --> SDK
+    App --> SDK
+    App -- "SEP-10 challenge" --> CD
     SDK --> ANC
     SUB --> STL
     STL --> NET
@@ -192,14 +194,17 @@ stateDiagram-v2
     SIGNED --> CASH_IN: cash-in confirmed AND verified on chain
     SIGNED --> EXPIRED: timebound passed before cash-in
     CASH_IN --> ONCHAIN: submit the signed XDR
+    CASH_IN --> EXPIRED: submission landed after maxTime
     ONCHAIN --> CREDITED: settles atomically
     ONCHAIN --> CAP_EXCEEDED: over sendMax, nothing moved
+    ONCHAIN --> FAILED: landed failed for another reason
     CREDITED --> [*]
     EXPIRED --> [*]
     CAP_EXCEEDED --> [*]
+    FAILED --> [*]
 ```
 
-`EXPIRED` leaves from `SIGNED`, not from `ONCHAIN`: a transaction whose timebound passed never enters a ledger at all, so there is no on-chain state to leave from. `CASH_IN` is never entered on the anchor callback alone; the deposit is independently confirmed from chain state first. The two terminal exits do not loop back. Re-signing opens a **new** saga referencing the old one by id, so the ledger keeps one row per signed transaction. There is no withdraw state in v1: the cash-out leg is a mock payout handler.
+`EXPIRED` leaves from `SIGNED` or `CASH_IN`, never from `ONCHAIN`: a transaction whose timebound passed never enters a ledger at all, so there is no on-chain state to leave from. `CASH_IN` is never entered on the anchor callback alone; the deposit is independently confirmed from chain state first. `FAILED` records any other on-chain failure (for example the recipient removed their trustline) with the Horizon result code. `EXPIRED` is only written after `maxTime` plus a 120-second grace period, and only when the transaction is not on chain. The terminal exits do not loop back. Re-signing opens a **new** saga referencing the old one by id, so the ledger keeps one row per signed transaction. There is no withdraw state in v1: the cash-out leg is a mock payout handler.
 
 ### 9.3 End-to-end flow (sequence)
 
@@ -212,14 +217,15 @@ sequenceDiagram
     participant X as Stellar testnet
     participant R as Recipient
 
+    S->>A: SEP-10 sign-in on connect (Corra co-signs client_domain only)
     S->>O: POST /quote (strict-receive, "Maria receives PHP 11,210")
-    O->>A: SEP-38 firm quote
-    A-->>O: quote id + expiry
     O->>X: /paths/strict-receive over seeded orderbooks
     X-->>O: route MXN -> USDC -> PHP + source cost
     O-->>S: quote + the sendMax to sign
+    S->>A: SEP-38 firm quote for the cap, with the sender's own session
+    A-->>S: quote id + expiry (handed to /confirm unchanged)
 
-    Note over S,X: account setup first: sponsored create + trustlines.<br/>The sender signs that too, so they sign twice in the flow.
+    Note over S,X: one-time setup: sponsored create + trustlines, its own prompt.<br/>The payment is signed once.
 
     Note over S: builds and signs in their own wallet.<br/>sendMax cap · 30-min maxTime · minSeqNum
     S->>O: POST /confirm (signed XDR)

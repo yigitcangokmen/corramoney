@@ -15,23 +15,25 @@ sequenceDiagram
     participant X as Stellar testnet
 
     S->>O: POST /quote (dest = ₱11,210)
-    O->>X: findPathStrictReceive
-    X-->>O: path [MXN,USDC,PHP] + estSource
-    O->>K: buildStrictReceive (unsigned XDR, sendMax +1.5%, timebound)
-    O-->>S: Quote + UNSIGNED XDR (source MXN 3,500 · TTL 30s)
-    Note over S: signs locally. The key never leaves the client.
-    S->>O: POST /confirm (quoteId, signed XDR, idemKey)
-    O->>L: payments(SIGNED) + event
-    O->>K: preflight ensureAccount/ensureTrustline (sender, recipient)
-    O->>A: initiateDeposit(sender, TEST_MXN)
-    A-->>O: ref (PENDING)
+    O->>X: findStrictReceivePath
+    X-->>O: path [MXN,USDC,PHP] + source cost
+    O-->>S: Quote (source MXN 3,500, sendMax +1.5%, TTL 2 min)
+    S->>A: SEP-38 firm quote for the cap, with the sender's own SEP-10 session
+    A-->>S: quote id + expiry
+    Note over S: builds the strict-receive XDR (buildStrictReceive)<br/>and signs it locally. The key never leaves the client.
+    S->>O: POST /confirm (quoteId, signed XDR, anchorQuote, Idempotency-Key)
+    O->>O: assertBoundPayment, recipient trustline check
+    O->>L: payments(SIGNED) + events
+    S->>A: SEP-24 deposit (memo ties it to this payment, quote_id)
+    S->>O: POST /payments/:id/cash-in (SEP-24 transaction id)
+    A->>X: pays TESTMXN to the sender
+    A-->>O: signed SEP-24 callback (a trigger only)
+    O->>X: findDeposit: confirm the credit on chain
     O->>L: CASH_IN
-    A-->>O: cash-in callback (verified on chain before advancing)
-    O->>L: CASH_IN
-    O->>K: submitSigned(XDR)
+    O->>K: submitPayment(signed XDR, fee-bumped by the sponsor)
     K->>X: path payment tx
     X-->>K: SUCCESS (atomic)
-    O->>L: ONCHAIN -> CREDITED (+ event)
+    O->>L: ONCHAIN -> CREDITED (+ mock payout acknowledgement)
     O-->>S: GET /payments/:id -> CREDITED (Maria received it)
     Note over S,X: Funds are in Maria's wallet: safe terminal state
     Note over O: Corra never held a key at any point
@@ -51,13 +53,13 @@ sequenceDiagram
     participant A as Anchor
     participant X as Stellar testnet
 
-    Note over O,L: ...CASH_IN (Diego's TEST_MXN is ready)
-    O->>K: submitSigned(XDR)
+    Note over O,L: ...CASH_IN (Diego's TESTMXN is ready)
+    O->>K: submitPayment(signed XDR)
     K->>X: path payment tx
-    X-->>K: op_over_sendmax (cost > sendMax)
+    X-->>K: op_over_source_max (cost > sendMax)
     X-->>O: FAILED tx lands in a ledger (fee + sequence consumed)
     O->>L: ONCHAIN -> CAP_EXCEEDED (terminal, + event: reason)
-    Note over S,A: No refund leg runs. Diego already holds the deposited<br/>TEST_MXN in an account only he can sign for.
+    Note over S,A: No refund leg runs. Diego already holds the deposited<br/>TESTMXN in an account only he can sign for.
     O-->>S: 409 "cost moved past your cap, get a fresh quote"
     S->>O: POST /quote, then POST /resign (new saga, supersedesId)
 ```
@@ -99,7 +101,7 @@ sequenceDiagram
     A-->>O: CONFIRMED
     O->>L: FOR UPDATE -> transition allowed? -> CASH_IN (event seq+1)
     Note over O,L: If a late duplicate callback arrives afterward:<br/>UNIQUE(payment_id,seq) conflicts -> no-op
-    O->>X: submitSigned(XDR) ... (flow continues)
+    O->>X: submitPayment(signed XDR) ... (flow continues)
 ```
 
 ## 5. Failure: the signed transaction expired
@@ -116,7 +118,7 @@ sequenceDiagram
     participant X as Stellar testnet
 
     Note over O,L: ...CASH_IN, but later than the timebound allowed
-    O->>K: submitSigned(XDR)
+    O->>K: submitPayment(signed XDR)
     K->>X: path payment tx
     X-->>K: tx_too_late
     O->>L: ONCHAIN -> EXPIRED (+ event: reason)
