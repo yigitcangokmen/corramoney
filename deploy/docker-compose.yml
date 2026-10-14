@@ -1,0 +1,113 @@
+# Production stack on one host. Only Caddy publishes ports (80/443); everything else, including
+# the Anchor Platform's admin RPC (Platform API, 8085), stays on the internal network.
+# Docker-published ports bypass the host firewall, which is why nothing else publishes any.
+#
+#   deploy/deploy.sh renders the config and runs:  docker compose -f deploy/docker-compose.yml up -d --build
+
+name: corra
+
+services:
+  caddy:
+    image: caddy:2.8
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [orchestrator, platform, anchor-business]
+    restart: unless-stopped
+
+  # ---- Corra
+  orchestrator:
+    build:
+      context: ..
+      dockerfile: services/orchestrator/Dockerfile
+    env_file: ./orchestrator.env
+    depends_on:
+      corra-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  corra-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: corra
+      POSTGRES_PASSWORD: corra
+      POSTGRES_DB: corra
+    volumes:
+      - corra-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corra"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  # ---- The test anchor (the anchor's side, not Corra's)
+  platform:
+    image: stellar/anchor-platform:4.8.0
+    command: --sep-server --platform-server --event-processor
+    env_file:
+      - ../infra/anchor/platform.env
+      - ../infra/anchor/generated/platform.secrets.env
+      - ./anchor.prod.env
+    volumes:
+      - ../infra/anchor/generated:/generated:ro
+    depends_on:
+      anchor-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+
+  anchor-business:
+    build:
+      context: ..
+      dockerfile: services/anchor-business/Dockerfile
+    env_file: ../infra/anchor/generated/business.env
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.3
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29096
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_HEAP_OPTS: -Xmx256m -Xms256m
+      CLUSTER_ID: ciWo7IWazngRchmPES6q5A==
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    restart: unless-stopped
+
+  anchor-db:
+    image: postgres:15.2-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - anchor-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:
+  corra-pgdata:
+  anchor-pgdata:
+  kafka-data:

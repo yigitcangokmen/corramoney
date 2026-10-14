@@ -1,0 +1,20 @@
+# TLS certificates are issued automatically by Caddy (Let's Encrypt).
+
+api.corra.money {
+	reverse_proxy orchestrator:8787 {
+		# SSE: flush each event immediately.
+		flush_interval -1
+	}
+}
+
+anchor.corra.money {
+	# The anchor's own SEP-24 deposit page lives on its business server.
+	@business path /sep24/interactive* /sep24/more_info* /sep24/simulate*
+	handle @business {
+		reverse_proxy anchor-business:8091
+	}
+	# SEP-1/10/24/38 from SDF Anchor Platform. Its Platform API (8085) is never exposed.
+	handle {
+		reverse_proxy platform:8080
+	}
+}
