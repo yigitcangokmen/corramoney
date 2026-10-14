@@ -1,0 +1,19 @@
+{
+  "name": "@corra/stellar",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@corra/shared": "workspace:^",
+    "@stellar/stellar-sdk": "^17.2.1"
+  }
+}
