@@ -1,0 +1,29 @@
+{
+  "name": "@corra/orchestrator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/pg": "^8",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@corra/settlement-saga": "workspace:^",
+    "@corra/shared": "workspace:^",
+    "@corra/stellar": "workspace:^",
+    "@fastify/cors": "^11",
+    "@stellar/stellar-sdk": "^17.2.1",
+    "fastify": "^5",
+    "pg": "^8",
+    "tsx": "^4.19.2"
+  }
+}
