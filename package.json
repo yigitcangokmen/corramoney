@@ -1,0 +1,27 @@
+{
+  "name": "corra",
+  "private": true,
+  "packageManager": "pnpm@9.15.3",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
+    "seed-testnet": "tsx scripts/seed-testnet.ts",
+    "onchain-check": "tsx scripts/onchain-check.ts",
+    "drive-payment": "tsx scripts/drive-payment.ts",
+    "no-server-side-signing": "tsx scripts/no-server-side-signing.ts",
+    "demo-recipient": "tsx scripts/demo-recipient.ts",
+    "anchor-check": "tsx scripts/anchor-check.ts",
+    "publish-app": "pnpm --filter @corra/web build:prod && cp -R apps/web/dist/. app/"
+  },
+  "devDependencies": {
+    "@stellar/stellar-sdk": "^17.2.1",
+    "@stellar/typescript-wallet-sdk": "^5",
+    "@types/node": "^22",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

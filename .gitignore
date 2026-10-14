@@ -2,5 +2,9 @@ node_modules
 .DS_Store
 dist
 .vercel
+.env*
+!.env.example
 preview.html
 _preview.mjs
+deploy/orchestrator.env
+deploy/.secrets
