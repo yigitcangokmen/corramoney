@@ -1,0 +1,70 @@
+# Test anchor for the TESTMXN cash-in: SDF Anchor Platform (SEP-1/10/24/38 + Platform API +
+# event processor for client callbacks), its Postgres, Kafka for events, and the anchor's own
+# business server. Run `pnpm exec tsx infra/anchor/setup.ts` first to render ./generated.
+#
+#   docker compose -f infra/anchor/docker-compose.yml up -d --build
+#
+# Host ports: 8080 SEP server, 8085 Platform API, 8091 anchor business server.
+# Corra's orchestrator is expected on the host at :8787 (reached as host.docker.internal:8787).
+services:
+  platform:
+    platform: linux/amd64 # the image is published for amd64 only
+    image: stellar/anchor-platform:4.8.0
+    command: --sep-server --platform-server --event-processor
+    env_file:
+      - ./platform.env
+      - ./generated/platform.secrets.env
+    volumes:
+      - ./generated:/generated:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8085:8085"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      anchor-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+
+  anchor-business:
+    build:
+      context: ../..
+      dockerfile: services/anchor-business/Dockerfile
+    env_file:
+      - ./generated/business.env
+    ports:
+      - "127.0.0.1:8091:8091"
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.3
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29096
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_HEAP_OPTS: -Xmx256m -Xms256m
+      CLUSTER_ID: ciWo7IWazngRchmPES6q5A==
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    restart: unless-stopped
+
+  anchor-db:
+    image: postgres:15.2-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      retries: 30
+    restart: unless-stopped

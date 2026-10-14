@@ -1,0 +1,23 @@
+{
+  "name": "@corra/anchor-business",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Test anchor business server next to SDF Anchor Platform. The anchor's side, not Corra's.",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^17.2.1",
+    "fastify": "^5",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.7"
+  }
+}

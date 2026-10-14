@@ -1,0 +1,20 @@
+VERSION = "0.1.0"
+NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+SIGNING_KEY = "${SEP10_SIGNING_KEY}"
+ACCOUNTS = ["${ANCHOR_DISTRIBUTION}"]
+WEB_AUTH_ENDPOINT = "${ANCHOR_PUBLIC_URL}/auth"
+TRANSFER_SERVER_SEP0024 = "${ANCHOR_PUBLIC_URL}/sep24"
+ANCHOR_QUOTE_SERVER = "${ANCHOR_PUBLIC_URL}/sep38"
+
+[DOCUMENTATION]
+ORG_NAME = "Corra test anchor (testnet only)"
+ORG_DESCRIPTION = "SDF Anchor Platform run by the Corra team to issue a test MXN token. Not a licensed anchor; no fiat moves."
+
+[[CURRENCIES]]
+code = "TESTMXN"
+issuer = "${CORRIDOR_ISSUER}"
+status = "test"
+is_asset_anchored = true
+anchor_asset_type = "fiat"
+anchor_asset = "MXN"
+desc = "Team-issued testnet token pegged 1:1 to MXN."

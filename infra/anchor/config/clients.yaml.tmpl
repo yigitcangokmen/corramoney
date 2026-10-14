@@ -1,0 +1,10 @@
+# Corra is a noncustodial wallet client. The platform attributes a SEP-24 transaction to Corra
+# only when the SEP-10 challenge carries Corra's client_domain signature, and then posts
+# status callbacks to callback_urls.sep24, signed with this anchor's SIGNING_KEY.
+items:
+  - name: corra
+    type: noncustodial
+    domains:
+      - ${CORRA_CLIENT_DOMAIN}
+    callback_urls:
+      sep24: ${CORRA_CALLBACK_URL}

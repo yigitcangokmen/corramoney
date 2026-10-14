@@ -1,0 +1,39 @@
+# TESTMXN: team-issued testnet token pegged 1:1 to MXN. SEP-24 deposit only.
+items:
+  - id: stellar:TESTMXN:${CORRIDOR_ISSUER}
+    distribution_account: ${ANCHOR_DISTRIBUTION}
+    significant_decimals: 7
+    sep6:
+      enabled: false
+    sep24:
+      enabled: true
+      deposit:
+        enabled: true
+        min_amount: 0
+        max_amount: 1000000
+        methods:
+          - SPEI
+      withdraw:
+        enabled: false
+    sep31:
+      enabled: false
+    sep38:
+      enabled: true
+      exchangeable_assets:
+        - iso4217:MXN
+  - id: iso4217:MXN
+    significant_decimals: 2
+    sep31:
+      enabled: false
+    sep38:
+      enabled: true
+      exchangeable_assets:
+        - stellar:TESTMXN:${CORRIDOR_ISSUER}
+      country_codes:
+        - MX
+      sell_delivery_methods:
+        - name: SPEI
+          description: Send MXN via SPEI.
+      buy_delivery_methods:
+        - name: SPEI
+          description: Receive MXN via SPEI.
