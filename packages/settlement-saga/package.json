@@ -1,0 +1,20 @@
+{
+  "name": "@corra/settlement-saga",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@stellar/stellar-sdk": "^17.2.1",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@corra/shared": "workspace:^",
+    "@corra/stellar": "workspace:^"
+  }
+}
