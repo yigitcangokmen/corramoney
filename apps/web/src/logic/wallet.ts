@@ -1,6 +1,5 @@
 import { isConnected, requestAccess } from '@stellar/freighter-api';
 import { getBalances } from './stellar';
-import { loadPositions } from './earn';
 import { assertFreighterReady, cancelRemit, freighterMessage, freighterSign } from './remit';
 import type { Ctl } from './types';
 
@@ -28,8 +27,7 @@ export async function connect(ctl: Ctl) {
     const b = await getBalances(pk);
     const mxn = parseFloat(b.TESTMXN || '0');
     if (!ctl.state.connecting) return;
-    const pos = loadPositions(pk);
-    ctl.set({ walletMode:'freighter', pubkey:pk, connecting:false, wallet:mxn, pos,
+    ctl.set({ walletMode:'freighter', pubkey:pk, connecting:false, wallet:mxn,
       anchorToken:token, anchorTokenExp:exp, remitBusy:null });
   } catch(e) {
     // Usually the user's own doing (rejected, wrong network); the message is on screen.
@@ -41,7 +39,7 @@ export async function connect(ctl: Ctl) {
 
 export function disconnect(ctl: Ctl) {
   cancelRemit();
-  ctl.set({ walletMode:'none', pubkey:null, wallet:0, connecting:false, pos:{},
+  ctl.set({ walletMode:'none', pubkey:null, wallet:0, connecting:false,
     anchorToken:null, anchorTokenExp:0, setupDone:false, quote:null, anchorQuote:null, payment:null,
     remitStep:'form', remitBusy:null, remitError:null, cashInUrl:null,
     trackError:null, popupBlocked:false, depositSkipped:false });

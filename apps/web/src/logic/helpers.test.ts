@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { earnedOf, n, amt, usdc, corr, totalVault, totalEarned } from './helpers';
+import { n, amt, usdc, corr } from './helpers';
 import type { AppState, Ctl } from './types';
 
 const INITIAL: AppState = {
@@ -7,7 +7,6 @@ const INITIAL: AppState = {
   pick:'PH', addr:'', remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false,
   anchorToken:null, anchorTokenExp:0, payment:null, cashInUrl:null,
   remitBusy:null, remitError:null, trackError:null, popupBlocked:false, depositSkipped:false, freighterMissing:false,
-  pos:{}, vaultDigits:'', vaultPick:'blend',
   sign:null, signState:'ask',
   wallet:0,
   history:[],
@@ -30,21 +29,6 @@ function makeCTL(overrides: Partial<AppState> = {}): Ctl {
     refreshBalances: async () => {},
   } as any;
 }
-
-describe('earnedOf', () => {
-  it('calculates yield over time', () => {
-    const now = Date.now();
-    const oneHourAgo = now - 3600000;
-    const result = earnedOf({ amt: 1000, at: oneHourAgo, earned: 0 }, 5.2);
-    expect(result).toBeGreaterThan(0);
-    expect(result).toBeLessThan(1);
-  });
-
-  it('returns 0 for zero amount', () => {
-    const result = earnedOf({ amt: 0, at: Date.now() - 3600000, earned: 0 }, 5.2);
-    expect(result).toBe(0);
-  });
-});
 
 describe('n (number format)', () => {
   it('formats with decimal places', () => {
@@ -109,35 +93,3 @@ describe('corr', () => {
   });
 });
 
-describe('totalVault', () => {
-  it('returns 0 with no positions', () => {
-    const ctl = makeCTL();
-    expect(totalVault(ctl)).toBe(0);
-  });
-
-  it('sums all position amounts', () => {
-    const ctl = makeCTL({
-      pos: {
-        blend: { amt: 100, at: Date.now(), earned: 0 },
-        defindex: { amt: 200, at: Date.now(), earned: 0 }
-      }
-    });
-    expect(totalVault(ctl)).toBe(300);
-  });
-});
-
-describe('totalEarned', () => {
-  it('returns 0 with no positions', () => {
-    const ctl = makeCTL();
-    expect(totalEarned(ctl)).toBe(0);
-  });
-
-  it('accumulates earnings across positions', () => {
-    const ctl = makeCTL({
-      pos: {
-        blend: { amt: 1000, at: Date.now() - 3600000, earned: 0 }
-      }
-    });
-    expect(totalEarned(ctl)).toBeGreaterThan(0);
-  });
-});

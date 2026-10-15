@@ -1,6 +1,5 @@
-import { VAULTS, CORR, TABS, SAGA_STEPS } from './data';
+import { CORR, TABS, SAGA_STEPS } from './data';
 import { chip, cta, flat } from './styles';
-import { earnedOf } from './helpers';
 import { StrKey } from '@stellar/stellar-sdk';
 import { TESTNET } from '@corra/shared';
 import { cashInLanded, depositAmount, validAmount } from './remit';
@@ -54,9 +53,6 @@ export function buildVals(ctl: Ctl): Vals {
       'text-transform:uppercase; color:var(--subtle);',
     chipStyle: chip,
     ctaStyle: cta(true),
-    ghostStyle: 'width:100%; margin-top:var(--sp-5); font-size:15px; font-weight:600;' +
-      'padding:var(--sp-4); border-radius:var(--r-sm); cursor:pointer; line-height:1.2;' +
-      'background:var(--surface); color:var(--text); border:1px solid var(--line-strong);',
     ctaFlat: flat(true), ghostFlat: flat(false),
 
     isConnected: s.walletMode !== 'none',
@@ -79,10 +75,9 @@ export function buildVals(ctl: Ctl): Vals {
           ? 'background:var(--brand); color:var(--on); border:1px solid var(--brand);'
           : 'background:transparent; color:var(--muted); border:1px solid transparent;')
     })),
-    isSend: s.tab === 'send', isHistory: s.tab === 'history', isYield: s.tab === 'yield',
+    isSend: s.tab === 'send', isHistory: s.tab === 'history',
     goSend: () => ctl.set({ tab: 'send' }),
     goHistory: () => ctl.set({ tab: 'history' }),
-    goYield: () => ctl.set({ tab: 'yield' }),
 
     // ---- send: form
     remitForm: s.remitStep === 'form',
@@ -203,37 +198,6 @@ export function buildVals(ctl: Ctl): Vals {
     trackPayment: (id: string) => ctl.track(id),
     trackDest: p ? amount(p.quote.dest.amount, 2) + ' ' + p.quote.dest.asset : '',
     trackRecipient: p ? short(p.recipientAccount) : '',
-
-    // ---- hidden legacy Earn (kept compiling until the Blend/DeFindex rewrite)
-    vaults: VAULTS.map(v => ({
-      name: v.name, note: v.note, addr: v.addr, apy: ctl.n(v.apy, 1) + '%',
-      pick: () => ctl.set({ vaultPick: v.id }),
-      style: 'padding:var(--sp-4); border-radius:var(--r-sm); cursor:pointer; text-align:left;' +
-        (s.vaultPick === v.id ? 'background:var(--weak); border:1px solid var(--brand);' : 'background:var(--surface); border:1px solid var(--line);')
-    })),
-    posCount: Object.keys(s.pos).length + (Object.keys(s.pos).length === 1 ? ' vault' : ' vaults'),
-    positions: Object.keys(s.pos).map(id => {
-      const pos = s.pos[id], v = VAULTS.find(x => x.id === id)!;
-      const gained = earnedOf(pos, v.apy);
-      return {
-        name: v.name, amt: ctl.n(pos.amt, 2) + ' USDC', apy: ctl.n(v.apy, 1) + '% annual',
-        age: ctl.n((Date.now() - pos.at) / 1000, 0) + ' s ago',
-        earnBig: '+' + ctl.n(gained, 4), earnTail: gained.toFixed(7).slice(-3),
-        out: () => ctl.vaultOut?.(id)
-      };
-    }),
-    vaultLabel: ctl.n(ctl.totalVault(), 2) + ' USDC',
-    earnedBig: '+' + ctl.n(ctl.totalEarned(), 4),
-    earnedTail: ctl.totalEarned().toFixed(7).slice(-3),
-    tickerBig: ctl.n(ctl.totalEarned(), 4),
-    tickerTail: String(ctl.totalEarned().toFixed(9)).slice(-5),
-    vaultText: s.vaultDigits,
-    onVault: (e: any) => ctl.set({ vaultDigits: String(e.target.value).replace(/[^0-9.,]/g, '').replace(',', '.') }),
-    vaultGo: () => ctl.vaultGo?.(),
-    cashOut: () => ctl.cashOut?.(),
-    vaultNotReady: true,
-    vaultBtnStyle: flat(false),
-    hasPosition: Object.keys(s.pos).length > 0,
 
     signOpen: !!s.sign,
     signAsk: !!s.sign && s.signState === 'ask',

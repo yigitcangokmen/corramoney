@@ -54,7 +54,7 @@ function makeCTL(overrides: Partial<AppState> = {}): Ctl & { state: AppState } {
     anchorQuote: { id: 'aq_old', expiresAt: Date.now() + 600_000, price: '1', sellAmount: '334.26', sellAsset: 'iso4217:MXN' },
     setupDone: true, anchorToken: 'jwt', anchorTokenExp: Date.now() + 3_600_000, payment: null, cashInUrl: null,
     remitBusy: null, remitError: null, trackError: null, popupBlocked: false, depositSkipped: false, freighterMissing: false,
-    pos: {}, vaultDigits: '', vaultPick: 'blend', sign: null, signState: 'ask', wallet: 0, history: [],
+    sign: null, signState: 'ask', wallet: 0, history: [],
     walletMode: 'freighter', pubkey: SENDER, connecting: false,
     ...overrides,
   };

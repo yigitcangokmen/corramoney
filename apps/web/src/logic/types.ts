@@ -1,10 +1,8 @@
 import type { PaymentEvent, PaymentWire, QuoteWire } from '@corra/shared';
 
-export interface Position { amt: number; at: number; earned: number }
-
 export interface Entry {
   kind: string; state: string; tone: number;
-  inAmt: string; outAmt: string; earned?: string;
+  inAmt: string; outAmt: string;
   when: string; tx: string | null;
 }
 
@@ -34,8 +32,6 @@ export interface AppState {
   depositSkipped: boolean;
   /** Freighter is not installed in this browser. */
   freighterMissing: boolean;
-  pos: Record<string, Position>;
-  vaultDigits: string; vaultPick: string;
   sign: Sign | null; signState: string;
   wallet: number;
   history: Entry[];

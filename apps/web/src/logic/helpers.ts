@@ -1,10 +1,5 @@
-import { VAULTS, CORR } from './data';
-import type { Ctl, Position } from './types';
-
-export function earnedOf(p: Position, apy: number) {
-  const elapsed = Math.min(Math.max(Date.now() - p.at, 0), 31536000000) / 1000;
-  return p.amt * (apy / 100) / 31536000 * elapsed;
-}
+import { CORR } from './data';
+import type { Ctl } from './types';
 
 export function n(ctl: Ctl, v: number, d: number) { return v.toLocaleString('en-US',
   { minimumFractionDigits:d, maximumFractionDigits:d }); }
@@ -14,18 +9,6 @@ export function amt(ctl: Ctl, k: string) { return parseInt((ctl.state as any)[k]
 export function usdc(ctl: Ctl, mxn: number) { return mxn / ctl.rate; }
 
 export function corr(ctl: Ctl) { return CORR.find(c => c.iso === ctl.state.pick) || CORR[0]; }
-
-export function pickedVault(ctl: Ctl) { return VAULTS.find(v => v.id === ctl.state.vaultPick) || VAULTS[0]; }
-
-export function totalVault(ctl: Ctl) { return Object.keys(ctl.state.pos)
-  .reduce((n, id) => n + ctl.state.pos[id].amt, 0); }
-
-export function totalEarned(ctl: Ctl) {
-  return Object.keys(ctl.state.pos).reduce((n: number, id: string) => {
-    const v = VAULTS.find(x => x.id === id);
-    return n + (v ? earnedOf(ctl.state.pos[id], v.apy) : 0);
-  }, 0);
-}
 
 export function log(ctl: Ctl, entry: any) { ctl.set(s => ({ history:[entry].concat(s.history).slice(0, 12) })); }
 

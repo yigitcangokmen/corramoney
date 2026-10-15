@@ -1,10 +1,3 @@
-export const VAULTS = [
-  { id:'blend',    name:'Blend',    apy:5.2, addr:'GAXGTNEY…W2WE',
-    note:'USDC lending pool' },
-  { id:'defindex', name:'DeFindex', apy:4.6, addr:'GBQK3RTX…P7LM',
-    note:'Managed USDC strategy' }
-];
-
 export const CORR = [
   { iso:'PH', name:'Philippines', cur:'PHP', sym:'₱', rate:56.00 },
   { iso:'BR', name:'Brazil',      cur:'BRL', sym:'R$',     rate:5.40  },
@@ -13,7 +6,6 @@ export const CORR = [
   { iso:'TH', name:'Thailand',    cur:'THB', sym:'฿', rate:33.00 }
 ];
 
-// Earn is hidden until it routes deposits straight into Blend / DeFindex contracts.
 export const TABS: [string, string][] = [
   ['send', 'Send'], ['history', 'History']
 ];

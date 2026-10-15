@@ -7,7 +7,6 @@ const INITIAL: AppState = {
   pick:'PH', addr:'', remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false,
   anchorToken:null, anchorTokenExp:0, payment:null, cashInUrl:null,
   remitBusy:null, remitError:null, trackError:null, popupBlocked:false, depositSkipped:false, freighterMissing:false,
-  pos:{}, vaultDigits:'', vaultPick:'blend',
   sign:null, signState:'ask',
   wallet:0,
   history:[],

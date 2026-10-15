@@ -4,7 +4,6 @@ import * as helpers from './logic/helpers';
 import * as signing from './logic/signing';
 import * as remit from './logic/remit';
 import * as wallet from './logic/wallet';
-import { VAULTS } from './logic/data';
 import type { AppState, Ctl, Props } from './logic/types';
 import TopBar from './components/TopBar';
 import Tabs from './components/Tabs';
@@ -18,7 +17,6 @@ const INITIAL: AppState = {
   remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false,
   anchorToken:null, anchorTokenExp:0, payment:null, cashInUrl:null,
   remitBusy:null, remitError:null, trackError:null, popupBlocked:false, depositSkipped:false, freighterMissing:false,
-  pos:{}, vaultDigits:'', vaultPick:'blend',
   sign:null, signState:'ask',
   wallet:0,
   history:[],
@@ -54,9 +52,6 @@ export default function App() {
     c.amt = (k: string) => helpers.amt(c, k);
     c.usdc = (t: number) => helpers.usdc(c, t);
     c.corr = () => helpers.corr(c);
-    c.pickedVault = () => helpers.pickedVault(c);
-    c.totalVault = () => helpers.totalVault(c);
-    c.totalEarned = () => helpers.totalEarned(c);
     c.log = (entry: any) => helpers.log(c, entry);
     c.stamp = () => helpers.stamp(c);
     c.hash = () => helpers.hash(c);
@@ -90,22 +85,7 @@ export default function App() {
   }, [set]);
 
   useEffect(() => {
-    const fast = setInterval(() => {
-      set((s: AppState) => {
-        const ids = Object.keys(s.pos);
-        if (!ids.length) return null;
-        const next: Record<string, any> = {};
-        ids.forEach(id => {
-          const p = s.pos[id], vault = VAULTS.find(x => x.id === id);
-          if (!vault) return;
-          next[id] = { amt:p.amt, at:p.at,
-            earned: p.amt * (vault.apy / 100) / 31536000 * ((Date.now() - p.at) / 1000) };
-        });
-        return { pos:next };
-      });
-    }, 90);
     return () => {
-      clearInterval(fast);
       if (balPollRef.current) clearInterval(balPollRef.current);
     };
   }, [set]);
