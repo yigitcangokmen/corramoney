@@ -34,7 +34,7 @@ Script: `pnpm onchain-check` ([source](scripts/onchain-check.ts)), run 2026-10-1
 | Cash-in credited, then confirmed from chain state | `2427c53ef59d91d95c16574e5f179477de1b3595a9755da3b7920d35a43df0d9` |
 | The pre-signed blob submitted, fee paid by the sponsor's fee-bump (CAP-15): TESTMXN -> USDC -> TESTPHP, recipient receives exactly 1000 | `a2289a07e5056acb3c95f83a23a59a7b1a07f277c88bae9b331c0e4edf49b022` |
 | Sender still holds 0 XLM after paying | script output, step 4 |
-| The same flow in the app with a **real Freighter wallet** (2026-10-12, `CORRA-JA5X`): SEP-10 sign-in on connect, payment signed in Freighter, SEP-24 cash-in at the anchor, CREDITED 55 s after signing | anchor deposit `b7796f7ecfc5e6bcdead50815931aac46963f782636e79c0e998175c4d0bec01`, payment `471f44efecb541287c64ce86cbe89124ab43bd2c853f614eb1d3ce1494ddc02d`. Screen recording: **pending** |
+| The same flow in the app with a **real Freighter wallet** (2026-10-12, `CORRA-JA5X`): SEP-10 sign-in on connect, payment signed in Freighter, SEP-24 cash-in at the anchor, CREDITED 55 s after signing | anchor deposit `b7796f7ecfc5e6bcdead50815931aac46963f782636e79c0e998175c4d0bec01`, payment `471f44efecb541287c64ce86cbe89124ab43bd2c853f614eb1d3ce1494ddc02d`. Screen recording: submitted to the Chapter Lead with the closeout form |
 | `no-server-side-signing` CI job | [`ci.yml`](.github/workflows/ci.yml), [`scripts/no-server-side-signing.ts`](scripts/no-server-side-signing.ts). Green run on `137c65e`: [CI run](https://github.com/yigitcangokmen/corramoney/actions/runs/38546949733), [the `no-server-side-signing` job](https://github.com/yigitcangokmen/corramoney/actions/runs/38546949733/job/115795238387) |
 
 ### Server signing scope
@@ -72,7 +72,7 @@ None can move user value. Each refusal is unit-tested.
 | Live demo running the full lifecycle, every step linked to stellar.expert | [app.corra.money](https://app.corra.money), backed by `api.corra.money` and `anchor.corra.money`. Tested by hand with a real Freighter wallet on 2026-10-14 (`CORRA-SZ6YHD`, tab closed mid-payment and resumed from History): deposit `2ff01fb019eb49c747373387d8f146776323afc9488a3962c0ed1cc8c8c4d6dc`, payment `c28a36b8834fc2c9c69c936505d241d2356a30f11e315edd832617a8078c2f4c` |
 | Extractable module | [`packages/settlement-saga`](packages/settlement-saga) |
 | Quickstart proven by CI from a clean clone (Postgres, anchor, orchestrator, one payment to CREDITED) | [`quickstart.yml`](.github/workflows/quickstart.yml). Green run on `137c65e`: [Quickstart (testnet) run](https://github.com/yigitcangokmen/corramoney/actions/runs/38546949728) |
-| Walkthrough video | **pending** |
+| Walkthrough video | Submitted to the Chapter Lead with the closeout form |
 
 ## Notes on the evidence
 
