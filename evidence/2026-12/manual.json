@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "item": "D2.position",
+      "phase": "pre-reset",
+      "origin": "local",
+      "files": [
+        "pre-reset/d2/poolcard-1440.png",
+        "pre-reset/d2/poolcard-390.png",
+        "pre-reset/d2/poolcard-390-done.png"
+      ],
+      "note": "Balance tab pool card on the local stack (headless Chrome, a keypair standing in for Freighter): position, 0.00% rate, On-Ice note",
+      "at": "2026-11-24T20:00:00.000Z"
+    },
+    {
+      "item": "D1.history",
+      "phase": "pre-reset",
+      "origin": "local",
+      "files": [
+        "pre-reset/d1/history-1440.png"
+      ],
+      "note": "History tab on the local stack (headless Chrome, a keypair standing in for Freighter): a deposit with its anchor reference (b6b7fa95-95f0-4348-986c-56351c99d969, matched by ref), Anchor record and stellar.expert links, and a send from the balance. The account shown is GC7SCNH5VM73G5AHY5BGUMCCQOH3TQWC4JEC33LNYSUY3A25X3WDAWZO (app-run 2026-11-25T10-10-50), not the D1 sender above: balance-check discards its sender's secret, so that sender's History cannot be opened. A History screenshot for the D1 sender needs a run whose keys are kept (for example the post-reset app run)",
+      "at": "2026-11-25T10:11:00.000Z"
+    }
+  ],
+  "pins": {},
+  "notes": {
+    "reset": "",
+    "blend": ""
+  },
+  "deviations": []
+}

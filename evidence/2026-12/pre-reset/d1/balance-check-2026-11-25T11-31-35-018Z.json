@@ -1,0 +1,34 @@
+{
+  "phase": "pre-reset",
+  "origin": "local",
+  "orchestrator": "http://localhost:8787",
+  "writtenAt": "2026-11-25T11:31:35.019Z",
+  "sender": "GCLGZIO3ENKMNBXR6QSJKNGGOKQN4WTZV2FQK4MGXCL3LENEI6AWGGTL",
+  "paymentAccount": "GD3PSBM63U7ECCWGEHJOJI5I3I7SWZNASCPDEP7KVXFGWG6WE2I5HIDL",
+  "recipient": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+  "deposit": "direct",
+  "setup": {
+    "account": "9b9a0c727a325ec508c569007d1362a1b7b791f624bdaf03b674e14ffde8e883",
+    "paymentAccount": "051ce1638c53d355c31adee52ed8cb386f20441b3020cc1ed02aa4927d066672"
+  },
+  "depositRow": {
+    "id": "dep_3ed11318fc9c4d50801fa5911d22cbf6",
+    "status": "CONFIRMED",
+    "matchedBy": "chain",
+    "anchorRef": null,
+    "txHash": "25b2396be49e5b2eca23c2bfc5b48a90b9d1959ec6baab2b499e8347f0c2e849",
+    "credited": "2000.0000000"
+  },
+  "sends": [
+    {
+      "fiat": "PHP",
+      "paymentId": "pmt_8ad4445bc1bd492d844cd1ed1a6eda18",
+      "publicId": "CORRA-QAKAQ9",
+      "txHash": "0751d9901c32b1157d121c6bde0e1e0b4da50b369a3c1a1f4341c5364cc6e44c",
+      "ledger": 5916530,
+      "state": "CREDITED",
+      "dest": "500.0000000 TESTPHP"
+    }
+  ],
+  "inProgressProbe": null
+}

@@ -1,0 +1,73 @@
+{
+  "phase": "pre-reset",
+  "origin": "local",
+  "orchestrator": "http://localhost:8787",
+  "writtenAt": "2026-11-25T10:04:00.333Z",
+  "sender": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+  "paymentAccount": "GDNAXGAWIZFWZXJTPTY3UU7LBUFSMDYI3GWHZ6CWGKATBERLYRRYHGNO",
+  "recipient": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+  "deposit": "direct",
+  "setup": {
+    "account": "d745500e7f44d6def18dea92546b33ae19c435b97d9359924c25dd2569fa05d1",
+    "paymentAccount": "67adaca453c161520f2cce237bdd8d770243f0933a6206c7752dbd2304b406ac"
+  },
+  "depositRow": {
+    "id": "dep_c0ef336de5d74deab5deb063388bf182",
+    "status": "CONFIRMED",
+    "matchedBy": "chain",
+    "anchorRef": null,
+    "txHash": "9d24a87001fddb207357ae75fa45925aaf1537b4b6e0b6a1c27ec741ceba152b",
+    "credited": "2000.0000000"
+  },
+  "sends": [
+    {
+      "fiat": "PHP",
+      "paymentId": "pmt_2d74636a134e4ecdada31817c6e52b63",
+      "publicId": "CORRA-Z85M9X",
+      "txHash": "4761e8a08daab5f54c6fbee76e27291fc36f3f4bb2b5dc86e420faaefd36adee",
+      "ledger": 5915473,
+      "state": "CREDITED",
+      "dest": "500.0000000 TESTPHP"
+    },
+    {
+      "fiat": "BRL",
+      "paymentId": "pmt_c405dd911af74ba6b5ebe86a0cef32f9",
+      "publicId": "CORRA-9BDPJB",
+      "txHash": "26dd69c21214b4b75a2c4297ab6fe73d687f6220f70147cdfe92e14a681b371c",
+      "ledger": 5915475,
+      "state": "CREDITED",
+      "dest": "50.0000000 TESTBRL"
+    },
+    {
+      "fiat": "ARS",
+      "paymentId": "pmt_e4b4e50a8c64454ab8a48e675c8d2471",
+      "publicId": "CORRA-ZEWAX6",
+      "txHash": "c882ff89fbc553e08e376dc95ddb727c536d9a2854d46bed7a9b73b5eabba631",
+      "ledger": 5915476,
+      "state": "CREDITED",
+      "dest": "5000.0000000 TESTARS"
+    },
+    {
+      "fiat": "IDR",
+      "paymentId": "pmt_cf115a6baad44e47a091e55adc06a333",
+      "publicId": "CORRA-9EW6CR",
+      "txHash": "5d520c6877f2bf459402feddad6dffd4aba883a3c84134d58ace6f5b6cc94322",
+      "ledger": 5915477,
+      "state": "CREDITED",
+      "dest": "100000.0000000 TESTIDR"
+    },
+    {
+      "fiat": "THB",
+      "paymentId": "pmt_2da419e5c2ae43f6bea928e58c8c10a1",
+      "publicId": "CORRA-TZBNAM",
+      "txHash": "f39b7f4042aa5a4cdafad89f664406eb67f160d4b8d1db8eaf45758d5f0bee36",
+      "ledger": 5915479,
+      "state": "CREDITED",
+      "dest": "300.0000000 TESTTHB"
+    }
+  ],
+  "inProgressProbe": {
+    "status": 409,
+    "code": "PAYMENT_IN_PROGRESS"
+  }
+}

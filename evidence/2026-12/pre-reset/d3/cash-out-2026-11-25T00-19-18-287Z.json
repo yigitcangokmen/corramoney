@@ -1,0 +1,119 @@
+{
+  "network": "Test SDF Network ; September 2015",
+  "payment": {
+    "id": "pmt_4e72925869414700a455254ef325a3f2",
+    "publicId": "CORRA-W6RK3U"
+  },
+  "recipient": "GAAIJPAMSY6EVPTOF4LWTVGBDI4IV6R6HUQCMBZ5XGMWGH2EF2KVX4RB",
+  "paymentAccount": "GB7BB7TEVACRVWC5NXEHYBU4UUFQD6MSAREEGASYJHPUQNRUIPDSSPEL",
+  "distribution": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+  "feeSponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+  "amount": "1000.0000000",
+  "asset": "TESTPHP:GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+  "anchor": {
+    "id": "dea97271-5261-4813-bffb-194800eb588c",
+    "status": "completed",
+    "payout": "sim-cash-pickup-dea97271",
+    "stellarTxId": "e2fe130157633b69dddacd1f0b5f0df24362ead229bc8d4c1a74159d9a68b33b",
+    "moreInfo": "http://localhost:8091/sep24/more_info?transaction_id=dea97271-5261-4813-bffb-194800eb588c"
+  },
+  "withdrawal": {
+    "envelope": "e2fe130157633b69dddacd1f0b5f0df24362ead229bc8d4c1a74159d9a68b33b",
+    "inner": "e3ce8ee495d546f77633017065f96a96dab340d77d0f4d862a90f8723a3f6643",
+    "ledger": 5908461,
+    "memo": {
+      "type": "id",
+      "value": "3276466007333330686"
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "type": "QUOTED",
+      "data": {
+        "quoteId": "qt_b3a19f32f66b485a853feef72733294f"
+      }
+    },
+    {
+      "seq": 2,
+      "type": "SIGNED",
+      "data": {
+        "maxTime": 1795567726,
+        "innerTxHash": "ff7aad3a5793ebd4af777d6c4b480c7b4ab69c84de1f20b8d1ed4a26634509b2"
+      }
+    },
+    {
+      "seq": 3,
+      "type": "CASH_IN",
+      "data": {
+        "depositTx": "aca88b45785401fcd537ad8d23ca653a80f087ea8a481b771ec3f514bec3aeb1"
+      }
+    },
+    {
+      "seq": 4,
+      "type": "ONCHAIN",
+      "data": {
+        "ledger": 5908459,
+        "txHash": "186162b2e5686b51993e63029a13ec279d5f552771a4bfacc7bd9af9e0064e7a"
+      }
+    },
+    {
+      "seq": 5,
+      "type": "CREDITED",
+      "data": {
+        "ledger": 5908459,
+        "txHash": "186162b2e5686b51993e63029a13ec279d5f552771a4bfacc7bd9af9e0064e7a"
+      }
+    },
+    {
+      "seq": 6,
+      "type": "CASH_OUT_SUBMITTED",
+      "data": {
+        "ref": "dea97271-5261-4813-bffb-194800eb588c",
+        "memo": {
+          "type": "id",
+          "value": "3276466007333330686"
+        },
+        "txHash": "e3ce8ee495d546f77633017065f96a96dab340d77d0f4d862a90f8723a3f6643",
+        "maxTime": 1795566242
+      }
+    },
+    {
+      "seq": 7,
+      "type": "CASH_OUT_ONCHAIN",
+      "data": {
+        "ref": "dea97271-5261-4813-bffb-194800eb588c",
+        "ledger": 5908461,
+        "txHash": "e2fe130157633b69dddacd1f0b5f0df24362ead229bc8d4c1a74159d9a68b33b"
+      }
+    },
+    {
+      "seq": 8,
+      "type": "CASH_OUT_ANCHOR_COMPLETED",
+      "data": {
+        "ref": "dea97271-5261-4813-bffb-194800eb588c",
+        "externalId": "sim-cash-pickup-dea97271",
+        "moreInfoUrl": "http://localhost:8091/sep24/more_info?transaction_id=dea97271-5261-4813-bffb-194800eb588c",
+        "withdrawMemo": {
+          "type": "id",
+          "value": "3276466007333330686"
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "type": "CASHED_OUT",
+      "data": {
+        "ref": "dea97271-5261-4813-bffb-194800eb588c",
+        "ledger": 5908461,
+        "payout": "sim-cash-pickup-dea97271",
+        "txHash": "e2fe130157633b69dddacd1f0b5f0df24362ead229bc8d4c1a74159d9a68b33b",
+        "moreInfoUrl": "http://localhost:8091/sep24/more_info?transaction_id=dea97271-5261-4813-bffb-194800eb588c"
+      }
+    }
+  ],
+  "refused": {
+    "amountPlusOneStroop": "UNBOUND_TRANSACTION"
+  },
+  "replay": true
+}

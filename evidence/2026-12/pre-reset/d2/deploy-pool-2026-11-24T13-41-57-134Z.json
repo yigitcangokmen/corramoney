@@ -1,0 +1,69 @@
+{
+  "network": "Test SDF Network ; September 2015",
+  "ledger": 5900814,
+  "ids": {
+    "plan": "A",
+    "factory": "CDV6RX4CGPCOKGTBFS52V3LMWQGZN3LCQTXF5RVPOOCG4XVMHXQ4NTF6",
+    "backstop": "CBDVWXT433PRVTUNM56C3JREF3HIZHRBA64NB2C3B2UNCKIS65ZYCLZA",
+    "oracle": "CBFQSK4U76625W7GKZDMP47ATARCBA6F45EP65YGRQODQQ3GDSOG6NY5",
+    "pool": "CAL5ZEAT7XIP5B7AAUJD6WOVG2W7YDIE27HNF7ABQIC3HBOC42TQFWHS",
+    "asset": "CCVVFAFYCJYOY3EJUDBOQU5TCY2TYG3W4RGIIOLLNVMWL7KWF52RGNVS",
+    "assetCode": "TESTMXN",
+    "assetIssuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+    "admin": "GC6XADS7NYMJIATPMFP2SZMPERBOLP6AVJVYJPRUN3GM4OW4HDIMEFWX",
+    "deployedAt": "2026-11-24T13:41:56.800Z"
+  },
+  "reserve": {
+    "index": 0,
+    "decimals": 7,
+    "c_factor": 0,
+    "l_factor": 0,
+    "util": 7000000,
+    "max_util": 9500000,
+    "r_base": 5000,
+    "r_one": 300000,
+    "r_two": 1000000,
+    "r_three": 10000000,
+    "reactivity": 20,
+    "supply_cap": "10000000000000000",
+    "enabled": true
+  },
+  "oraclePrice": "544959",
+  "steps": [
+    {
+      "label": "oracle deploy",
+      "hash": "633b97cc7c1cdde21eadd818fd33bf0c903b09e96eeaf76d797752d6e23466ad",
+      "ledger": 5900808
+    },
+    {
+      "label": "oracle set_data",
+      "hash": "98fd457779e7d149a71af5f03d956ef1c98e0979c685043d4139f8f8a62d4c63",
+      "ledger": 5900809
+    },
+    {
+      "label": "oracle set_price_stable",
+      "hash": "0480948a11a765cb23786b4892bed8a3d9f881df0e0555f07b9cdd0b21cfd429",
+      "ledger": 5900810
+    },
+    {
+      "label": "pool deploy",
+      "hash": "06cad163da5bc36339f95c42098bcb5281b1a6ae59b8d64cce2ad9a62809ff89",
+      "ledger": 5900811
+    },
+    {
+      "label": "queue_set_reserve",
+      "hash": "2dfb3533935685487d9b68ee6613af45e89271045f7b16b65e2b7a83c8e651ce",
+      "ledger": 5900812
+    },
+    {
+      "label": "set_reserve",
+      "hash": "7e212c01ef2283f11e3b61b138b035d5febf9e943a1faf5add5e672a2cfde5fb",
+      "ledger": 5900813
+    },
+    {
+      "label": "set_status(2)",
+      "hash": "889bee10f63060c82abd18d2beb5afa3f3a0e51dc56b641a3d45b5a0a080613f",
+      "ledger": 5900814
+    }
+  ]
+}

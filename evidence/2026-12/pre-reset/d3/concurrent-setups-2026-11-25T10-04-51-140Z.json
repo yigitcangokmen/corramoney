@@ -1,0 +1,44 @@
+{
+  "phase": "pre-reset",
+  "origin": "local",
+  "orchestrator": "http://localhost:8787",
+  "writtenAt": "2026-11-25T10:04:51.141Z",
+  "network": "testnet",
+  "ledger": 5915489,
+  "attempts": 1,
+  "users": [
+    {
+      "account": "GBD2FDCJMIVXDSQ7NPZEFEC4TMLUDB72ENOODGH33FT2OV6WSWQRZDED",
+      "paymentAccount": "GAEBIIBXTZANBVJOX72XXU5XDA4ES2EOX5KPTSUS7CBXL6DMOB7AXY2T",
+      "channel": "GBD5AGFUZTFW53CXJ4KKLB4PKE3D3NW4XCCPYDWV54RPI6E6A4PQJLQK",
+      "paymentAccountTx": "2866079ea249c99457959eb6342701e1497207e4653b7535d42b75b90921abdf",
+      "accountTx": "c4dced2c4f8a8eb6cac683ee411c6841d2bcfd457a6446aebbe15d06c4ffd99a",
+      "ledgers": {
+        "paymentAccount": 5915488,
+        "account": 5915489
+      }
+    },
+    {
+      "account": "GA2KZ6HY2MG2HVZXZJOVXRPC2IVRV2QDSPM7BYENFXB47T22TEFNA37U",
+      "paymentAccount": "GAXOD43NS7RY3NI4WQ54JQBZ2WSBULEDJLRGNKYJUZQMFYTZU3CGAKLS",
+      "channel": "GAJWJUOQZG22KWO7GAACWRPXVROWXXSMW3I2XZKX5UL4ZHE7OWSIWNUH",
+      "paymentAccountTx": "0375f2ea9d1f4e0b726c4ecb366ef5b89265dc9448093eba1883066be917e760",
+      "accountTx": "4cf15c109a7c80c584309168497e38fbbde5a6c28b8b2e54367aee3e30cd2a72",
+      "ledgers": {
+        "paymentAccount": 5915488,
+        "account": 5915489
+      }
+    },
+    {
+      "account": "GCVZL23TILTAKHZCI4I3EKHGDJGOUT6VP64LLKOGTUKP3X5DUDENGDCA",
+      "paymentAccount": "GDXS3HOES2OYS73CYQV4QN62LR4VDZCGYW6B4IICKKLIIQJ43PY5TAAY",
+      "channel": "GASCQFX2EESUNB32OU6AQXTATLVTEUO2LCWKREJTMN4VL2WPUXOLUSOK",
+      "paymentAccountTx": "18b481f23a62d8be2c51b807a834676a184afb77b7008cb4bc939559ef8f09a4",
+      "accountTx": "9b756799fc10872bef44d114e12b8d927615ad19ee12fc86206ea96ecf3d9d8e",
+      "ledgers": {
+        "paymentAccount": 5915488,
+        "account": 5915489
+      }
+    }
+  ]
+}

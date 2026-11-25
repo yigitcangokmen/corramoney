@@ -1,0 +1,79 @@
+{
+  "hash": "87569659cac84a60b014e296273e3594bf5c44faa76e995404484d7341e1bb0b",
+  "servedAs": "transaction",
+  "network": "Test SDF Network ; September 2015",
+  "fetchedAt": "2026-11-25T09:34:54.206Z",
+  "horizon": {
+    "transaction": {
+      "id": "87569659cac84a60b014e296273e3594bf5c44faa76e995404484d7341e1bb0b",
+      "paging_token": "25365127662407680",
+      "successful": true,
+      "hash": "87569659cac84a60b014e296273e3594bf5c44faa76e995404484d7341e1bb0b",
+      "ledger": 5905779,
+      "created_at": "2026-11-24T20:35:37Z",
+      "source_account": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+      "source_account_sequence": "21472152125440144",
+      "fee_account": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+      "fee_charged": "100",
+      "max_fee": "1000",
+      "operation_count": 1,
+      "envelope_xdr": "AAAAAgAAAACDlhhVu5mX2PcWNi+xqpi82FMy7J5YFEObwIIxGlJ6KgAAA+gATEjPAAAAkAAAAAEAAAAAAAAAAAAAAABrBfVSAAAAAAAAAAEAAAAAAAAAAQAAAADVas6Q1Ua5utKkQb1jt2OrC61RYMl8LAQAt4xErvQAMQAAAAJURVNUTVhOAAAAAAAAAAAA5twVwdEVNSK7bxht+jui82nzwvnUKqY/33QXigmZvksAAAAAHc1lAAAAAAAAAAABGlJ6KgAAAEAQkF/SCjeZDC7lzqpPxTFSXVVKMpiwHB1mF+Kk8Bjx4hCV55I5iBUPYSP7EDxEDZLakIFvzJglehvodW0LEHUJ",
+      "result_xdr": "AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=",
+      "fee_meta_xdr": "AAAAAgAAAAMAWh1hAAAAAAAAAACDlhhVu5mX2PcWNi+xqpi82FMy7J5YFEObwIIxGlJ6KgAAABdIdrAkAExIzwAAAI8AAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAADAAAAAABaHWEAAAAAawX0vwAAAAAAAAABAFodcwAAAAAAAAAAg5YYVbuZl9j3FjYvsaqYvNhTMuyeWBRDm8CCMRpSeioAAAAXSHavwABMSM8AAACPAAAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAwAAAAAAWh1hAAAAAGsF9L8AAAAA",
+      "memo_type": "none",
+      "signatures": [
+        "EJBf0go3mQwu5c6qT8UxUl1VSjKYsBwdZhfipPAY8eIQleeSOYgVD2Ej+xA8RA2S2pCBb8yYJXob6HVtCxB1CQ=="
+      ],
+      "preconditions": {
+        "timebounds": {
+          "min_time": "0",
+          "max_time": "1795552594"
+        }
+      }
+    },
+    "operations": [
+      {
+        "id": "25365127662407681",
+        "paging_token": "25365127662407681",
+        "transaction_successful": true,
+        "source_account": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+        "type": "payment",
+        "type_i": 1,
+        "created_at": "2026-11-24T20:35:37Z",
+        "transaction_hash": "87569659cac84a60b014e296273e3594bf5c44faa76e995404484d7341e1bb0b",
+        "asset_type": "credit_alphanum12",
+        "asset_code": "TESTMXN",
+        "asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "from": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+        "to": "GDKWVTUQ2VDLTOWSURA32Y5XMOVQXLKRMDEXYLAEAC3YYRFO6QADC3L4",
+        "amount": "50.0000000"
+      }
+    ],
+    "effects": [
+      {
+        "id": "0025365127662407681-0000000001",
+        "paging_token": "25365127662407681-1",
+        "account": "GDKWVTUQ2VDLTOWSURA32Y5XMOVQXLKRMDEXYLAEAC3YYRFO6QADC3L4",
+        "type": "account_credited",
+        "type_i": 2,
+        "created_at": "2026-11-24T20:35:37Z",
+        "asset_type": "credit_alphanum12",
+        "asset_code": "TESTMXN",
+        "asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "amount": "50.0000000"
+      },
+      {
+        "id": "0025365127662407681-0000000002",
+        "paging_token": "25365127662407681-2",
+        "account": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+        "type": "account_debited",
+        "type_i": 3,
+        "created_at": "2026-11-24T20:35:37Z",
+        "asset_type": "credit_alphanum12",
+        "asset_code": "TESTMXN",
+        "asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "amount": "50.0000000"
+      }
+    ]
+  }
+}

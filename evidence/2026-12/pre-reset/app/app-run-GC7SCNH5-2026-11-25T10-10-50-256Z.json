@@ -1,0 +1,35 @@
+{
+  "phase": "pre-reset",
+  "origin": "local",
+  "orchestrator": "http://localhost:8787",
+  "writtenAt": "2026-11-25T10:10:50.257Z",
+  "account": "GC7SCNH5VM73G5AHY5BGUMCCQOH3TQWC4JEC33LNYSUY3A25X3WDAWZO",
+  "recipient": null,
+  "deposits": [
+    {
+      "id": "dep_ff053394141244e4b82fd2141766db37",
+      "status": "CONFIRMED",
+      "matchedBy": "ref",
+      "anchorRef": "b6b7fa95-95f0-4348-986c-56351c99d969",
+      "txHash": "3b4767328d914fb6150b7160fb7d9d765349c9acdc00457a61842d2eec4bc75b",
+      "credited": "600.0000000"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pmt_eec7c23104514d44a1340b00e8b1309c",
+      "publicId": "CORRA-YCE2QA",
+      "kind": "balance",
+      "state": "CREDITED",
+      "recipient": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+      "destAsset": "TESTPHP",
+      "destAmount": "500.0000000",
+      "txHash": "a9bae01148e61d8b6cea617f7b991429f07bb85f6cdd5f93a3147049f8f4e643",
+      "ledger": 5915558
+    }
+  ],
+  "pool": {
+    "ops": []
+  },
+  "cashOuts": []
+}

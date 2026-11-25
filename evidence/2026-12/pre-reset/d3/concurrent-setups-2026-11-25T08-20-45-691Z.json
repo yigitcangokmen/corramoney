@@ -1,0 +1,40 @@
+{
+  "network": "testnet",
+  "ledger": 5914240,
+  "attempts": 1,
+  "users": [
+    {
+      "account": "GDKCJF7VU6UMVYCL5FRKCRDTB5K275CI2CU23AKAYB4BF42SBGQYZLKB",
+      "paymentAccount": "GDZZLUQCS7ZMWCT6GC5AFJ3FP2YPSJ34PI57MJNOG4FU6J32P4LQVEBC",
+      "channel": "GBD5AGFUZTFW53CXJ4KKLB4PKE3D3NW4XCCPYDWV54RPI6E6A4PQJLQK",
+      "paymentAccountTx": "f33bc434d512f317866560bfa02b5aaf89084d9b9f3fcab56745f1eec1e05bf2",
+      "accountTx": "5e3e122050961f9c69353ad054fa4ef85f8ee3d5b6ecd6623ae7974ec59a61f3",
+      "ledgers": {
+        "paymentAccount": 5914239,
+        "account": 5914240
+      }
+    },
+    {
+      "account": "GCCXW4XAN6EJCR5RYNS7ITA63MUDJ5JBGQ22RNSFSEHTJN5WBZ6IYYTQ",
+      "paymentAccount": "GAXDHM3EXKSJXHP6566BPC3ZXYV4AJP6LT6D6MRJ42COOI7B66MMOIOB",
+      "channel": "GDB5L5IT34T24FJ2VVDP6LP7VR5EPGGX5Z6QFYK5LSAUIJUXNP2GD5GB",
+      "paymentAccountTx": "930156655aa6cca4be932690aed93c9bf52346dce43307c834669b9ab2eed556",
+      "accountTx": "d8b765c6eb187a80e113017f6799430911408ba3d3c20d92bee598d40cc879ad",
+      "ledgers": {
+        "paymentAccount": 5914239,
+        "account": 5914240
+      }
+    },
+    {
+      "account": "GABWIUQ4EHAH5WBBMJJDAFHPZ4BJKX53GIN4PRFV3W66VAKZNQSV35PO",
+      "paymentAccount": "GCT5IAYTU3PL6PH7DZLMF6CQR5CXHTKLGIWMTQVMCRKPKXQJVUEXEHZB",
+      "channel": "GCHPMPNRDH7KS7BOT6YTHUC3T5XIKLLTOS2WB5KX2OZQZT55GBAHKNLT",
+      "paymentAccountTx": "e3a76c64a47cc94bdc3d559c9faa6e97ba05d21c20fc1774df43bdcdfe671689",
+      "accountTx": "8ec919a85a74de73699ca6769b9916f0cecd0438ff93097e5c3f297a116b2ee5",
+      "ledgers": {
+        "paymentAccount": 5914239,
+        "account": 5914240
+      }
+    }
+  ]
+}

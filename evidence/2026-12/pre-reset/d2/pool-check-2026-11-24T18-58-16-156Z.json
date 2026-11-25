@@ -1,0 +1,52 @@
+{
+  "network": "Test SDF Network ; September 2015",
+  "pool": "CAL5ZEAT7XIP5B7AAUJD6WOVG2W7YDIE27HNF7ABQIC3HBOC42TQFWHS",
+  "asset": "CCVVFAFYCJYOY3EJUDBOQU5TCY2TYG3W4RGIIOLLNVMWL7KWF52RGNVS",
+  "account": "GDQVZ7FVEBFD5SFTL6HPD5W5LI52K6WRORZ3EXFJ6N56HMNI7WCQJCSB",
+  "setup": "63c73fcf17f381e97da1a0cb74472b69c3060afeb47359d7e8ccffba0243b5b3",
+  "funding": "e0f6e9177a69fc172b6646b2a04c28d5a4627dc0375f36c06165338bd842eb2c",
+  "supply": {
+    "outer": "b0c9ac5b4971c64aabc2cb5757e9bc9c78439f8b916e056e306ffc3de45061dd",
+    "inner": "9d662dd0581b5f16cf3f6601bceb1c50e353a097139f6207c71e274a44c926be",
+    "ledger": 5904608,
+    "resourceFee": "637414",
+    "fee_charged": "551821"
+  },
+  "withdraw": {
+    "outer": "41305dcc79bc138ddbe98fd1db4fb1a8f7f1feb7a8d759755af1aafffec17b5d",
+    "inner": "282a3736dff709595cd82e31cb93adae44c895093eea3e8c16b7a20c60864b46",
+    "ledger": 5904610,
+    "resourceFee": "17693",
+    "fee_charged": "12887"
+  },
+  "refusals": [
+    {
+      "label": "replay",
+      "status": 200,
+      "id": "pop_83f6569a2150443eb894b3fc5110ffbb"
+    },
+    {
+      "label": "duplicate",
+      "status": 409,
+      "code": "DUPLICATE_TRANSACTION"
+    },
+    {
+      "label": "request type 2 (supply collateral)",
+      "status": 422,
+      "code": "REFUSED",
+      "message": "only supply or withdraw"
+    },
+    {
+      "label": "to = another account",
+      "status": 422,
+      "code": "REFUSED",
+      "message": "from, spender and to must be the signer"
+    },
+    {
+      "label": "two requests",
+      "status": 422,
+      "code": "REFUSED",
+      "message": "exactly one request"
+    }
+  ]
+}

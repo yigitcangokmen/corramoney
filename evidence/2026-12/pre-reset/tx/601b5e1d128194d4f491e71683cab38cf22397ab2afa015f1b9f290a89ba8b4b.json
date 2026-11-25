@@ -1,0 +1,176 @@
+{
+  "hash": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+  "servedAs": "transaction",
+  "network": "Test SDF Network ; September 2015",
+  "fetchedAt": "2026-11-25T09:37:02.503Z",
+  "horizon": {
+    "transaction": {
+      "id": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+      "paging_token": "25398963414777856",
+      "successful": true,
+      "hash": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+      "ledger": 5913657,
+      "created_at": "2026-11-25T07:32:08Z",
+      "source_account": "GDB5L5IT34T24FJ2VVDP6LP7VR5EPGGX5Z6QFYK5LSAUIJUXNP2GD5GB",
+      "source_account_sequence": "25398353529405445",
+      "fee_account": "GDB5L5IT34T24FJ2VVDP6LP7VR5EPGGX5Z6QFYK5LSAUIJUXNP2GD5GB",
+      "fee_charged": "400",
+      "max_fee": "4000",
+      "operation_count": 4,
+      "envelope_xdr": "AAAAAgAAAADD1fUT3yeuFTqtRv8t/6x6R5jX7n0C4V1cgUQml2v0YQAAD6AAWjurAAAABQAAAAEAAAAAAAAAAAAAAABrBpAiAAAAAAAAAAQAAAABAAAAAJjlBUNJUHEUotDAcx//RmYU5q0T3cpaGVymYiEBsMyVAAAAEAAAAABM/ATTujqW2pPL5SRkMtpnVLV4f30PjGBRF9zbc6DoFgAAAAEAAAAAmOUFQ0lQcRSi0MBzH/9GZhTmrRPdyloZXKZiIQGwzJUAAAAAAAAAAEz8BNO6Opbak8vlJGQy2mdUtXh/fQ+MYFEX3NtzoOgWAAAAAAAAAAAAAAABAAAAAEz8BNO6Opbak8vlJGQy2mdUtXh/fQ+MYFEX3NtzoOgWAAAABQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAAAAAAEAAAAAo3Ex6odijRy9RA4zjpx5uBsi/hEHcUUmK6A2kIhNzcUAAAABAAAAAQAAAABM/ATTujqW2pPL5SRkMtpnVLV4f30PjGBRF9zbc6DoFgAAABEAAAAAAAAAAwGwzJUAAABAjATFJaJCwWqr8nJYtlCX60oBlCnmxtRb5mMqZ08G+DYjWYzQwzhbvtebjv68iaPQZdYchRDqJnVyRUhSslm2Bpdr9GEAAABAvqtNkrp6plqyN9du848BjgYSDbltQt7H9nb5j0OfAJYK2vByyGibsDvHVnpZEPwGWpsFj3fdpzKB0VdDVcnDCnOg6BYAAABAwdwIESX6pKsAPQzUre2aXKkQaCneNvdNcATKyufX90qqmRHRHmMtrjkHh71kkgsylXtdLHURTlTxcx7hxPmZBA==",
+      "result_xdr": "AAAAAAAAAZAAAAAAAAAABAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAAAAAAAAAAARAAAAAAAAAAA=",
+      "fee_meta_xdr": "AAAAAgAAAAMAWjvbAAAAAAAAAADD1fUT3yeuFTqtRv8t/6x6R5jX7n0C4V1cgUQml2v0YQAAABdIduHAAFo7qwAAAAQAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAADAAAAAABaO9sAAAAAawaNIgAAAAAAAAABAFo8OQAAAAAAAAAAw9X1E98nrhU6rUb/Lf+sekeY1+59AuFdXIFEJpdr9GEAAAAXSHbgMABaO6sAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAwAAAAAAWjvbAAAAAGsGjSIAAAAA",
+      "memo_type": "none",
+      "signatures": [
+        "jATFJaJCwWqr8nJYtlCX60oBlCnmxtRb5mMqZ08G+DYjWYzQwzhbvtebjv68iaPQZdYchRDqJnVyRUhSslm2Bg==",
+        "vqtNkrp6plqyN9du848BjgYSDbltQt7H9nb5j0OfAJYK2vByyGibsDvHVnpZEPwGWpsFj3fdpzKB0VdDVcnDCg==",
+        "wdwIESX6pKsAPQzUre2aXKkQaCneNvdNcATKyufX90qqmRHRHmMtrjkHh71kkgsylXtdLHURTlTxcx7hxPmZBA=="
+      ],
+      "preconditions": {
+        "timebounds": {
+          "min_time": "0",
+          "max_time": "1795592226"
+        }
+      }
+    },
+    "operations": [
+      {
+        "id": "25398963414777857",
+        "paging_token": "25398963414777857",
+        "transaction_successful": true,
+        "source_account": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+        "type": "begin_sponsoring_future_reserves",
+        "type_i": 16,
+        "created_at": "2026-11-25T07:32:08Z",
+        "transaction_hash": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+        "sponsored_id": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O"
+      },
+      {
+        "id": "25398963414777858",
+        "paging_token": "25398963414777858",
+        "transaction_successful": true,
+        "source_account": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+        "type": "create_account",
+        "type_i": 0,
+        "created_at": "2026-11-25T07:32:08Z",
+        "transaction_hash": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+        "sponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+        "starting_balance": "0.0000000",
+        "funder": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O"
+      },
+      {
+        "id": "25398963414777859",
+        "paging_token": "25398963414777859",
+        "transaction_successful": true,
+        "source_account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "set_options",
+        "type_i": 5,
+        "created_at": "2026-11-25T07:32:08Z",
+        "transaction_hash": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+        "sponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+        "master_key_weight": 0,
+        "signer_key": "GCRXCMPKQ5RI2HF5IQHDHDU4PG4BWIX6CEDXCRJGFOQDNEEIJXG4K6DQ",
+        "signer_weight": 1,
+        "low_threshold": 1,
+        "med_threshold": 1,
+        "high_threshold": 1
+      },
+      {
+        "id": "25398963414777860",
+        "paging_token": "25398963414777860",
+        "transaction_successful": true,
+        "source_account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "end_sponsoring_future_reserves",
+        "type_i": 17,
+        "created_at": "2026-11-25T07:32:08Z",
+        "transaction_hash": "601b5e1d128194d4f491e71683cab38cf22397ab2afa015f1b9f290a89ba8b4b",
+        "begin_sponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6"
+      }
+    ],
+    "effects": [
+      {
+        "id": "0025398963414777858-0000000001",
+        "paging_token": "25398963414777858-1",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "account_created",
+        "type_i": 0,
+        "created_at": "2026-11-25T07:32:08Z",
+        "starting_balance": "0.0000000"
+      },
+      {
+        "id": "0025398963414777858-0000000002",
+        "paging_token": "25398963414777858-2",
+        "account": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+        "type": "account_debited",
+        "type_i": 3,
+        "created_at": "2026-11-25T07:32:08Z",
+        "asset_type": "native",
+        "amount": "0.0000000"
+      },
+      {
+        "id": "0025398963414777858-0000000003",
+        "paging_token": "25398963414777858-3",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "signer_created",
+        "type_i": 10,
+        "created_at": "2026-11-25T07:32:08Z",
+        "weight": 1,
+        "public_key": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "key": ""
+      },
+      {
+        "id": "0025398963414777858-0000000004",
+        "paging_token": "25398963414777858-4",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "account_sponsorship_created",
+        "type_i": 60,
+        "created_at": "2026-11-25T07:32:08Z",
+        "sponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6"
+      },
+      {
+        "id": "0025398963414777859-0000000001",
+        "paging_token": "25398963414777859-1",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "account_thresholds_updated",
+        "type_i": 4,
+        "created_at": "2026-11-25T07:32:08Z",
+        "low_threshold": 1,
+        "med_threshold": 1,
+        "high_threshold": 1
+      },
+      {
+        "id": "0025398963414777859-0000000002",
+        "paging_token": "25398963414777859-2",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "signer_removed",
+        "type_i": 11,
+        "created_at": "2026-11-25T07:32:08Z",
+        "weight": 0,
+        "public_key": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "key": ""
+      },
+      {
+        "id": "0025398963414777859-0000000003",
+        "paging_token": "25398963414777859-3",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "signer_created",
+        "type_i": 10,
+        "created_at": "2026-11-25T07:32:08Z",
+        "weight": 1,
+        "public_key": "GCRXCMPKQ5RI2HF5IQHDHDU4PG4BWIX6CEDXCRJGFOQDNEEIJXG4K6DQ",
+        "key": ""
+      },
+      {
+        "id": "0025398963414777859-0000000004",
+        "paging_token": "25398963414777859-4",
+        "account": "GBGPYBGTXI5JNWUTZPSSIZBS3JTVJNLYP56Q7DDAKEL5ZW3TUDUBMD3O",
+        "type": "signer_sponsorship_created",
+        "type_i": 72,
+        "created_at": "2026-11-25T07:32:08Z",
+        "signer": "GCRXCMPKQ5RI2HF5IQHDHDU4PG4BWIX6CEDXCRJGFOQDNEEIJXG4K6DQ",
+        "sponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6"
+      }
+    ]
+  }
+}

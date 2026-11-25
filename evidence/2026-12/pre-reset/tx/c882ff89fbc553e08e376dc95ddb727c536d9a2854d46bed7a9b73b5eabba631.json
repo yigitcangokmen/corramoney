@@ -1,0 +1,176 @@
+{
+  "hash": "c882ff89fbc553e08e376dc95ddb727c536d9a2854d46bed7a9b73b5eabba631",
+  "servedAs": "fee-bump",
+  "network": "Test SDF Network ; September 2015",
+  "fetchedAt": "2026-11-25T10:08:08.040Z",
+  "horizon": {
+    "transaction": {
+      "id": "c882ff89fbc553e08e376dc95ddb727c536d9a2854d46bed7a9b73b5eabba631",
+      "paging_token": "25406775960358912",
+      "successful": true,
+      "hash": "c882ff89fbc553e08e376dc95ddb727c536d9a2854d46bed7a9b73b5eabba631",
+      "ledger": 5915476,
+      "created_at": "2026-11-25T10:03:43Z",
+      "source_account": "GDNAXGAWIZFWZXJTPTY3UU7LBUFSMDYI3GWHZ6CWGKATBERLYRRYHGNO",
+      "source_account_sequence": "25406715830730755",
+      "fee_account": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+      "fee_charged": "200",
+      "max_fee": "2000",
+      "operation_count": 1,
+      "envelope_xdr": "AAAABQAAAACY5QVDSVBxFKLQwHMf/0ZmFOatE93KWhlcpmIhAbDMlQAAAAAAAAfQAAAAAgAAAADaC5gWRkts3TN88bpT6w0LJg8I2ax8+FYygTCSK8RjgwAAAAAAWkNGAAAAAwAAAAEAAAAAAAAAAAAAAABrBrOnAAAAAAAAAAEAAAABAAAAAASCzNm+h4VSVUTfAfW0u//Lj3g7iqXN57DncaY/VAK8AAAAAgAAAAJURVNUTVhOAAAAAAAAAAAA5twVwdEVNSK7bxht+jui82nzwvnUKqY/33QXigmZvksAAAAAN8kTmgAAAABpSssdUE3Utg2Z5F+vqk/qpP96S6W1JvQCwkhJZ78YZAAAAAJURVNUQVJTAAAAAAAAAAAA5twVwdEVNSK7bxht+jui82nzwvnUKqY/33QXigmZvksAAAALpDt0AAAAAAEAAAABVVNEQwAAAACR0loYncDFrc+WVZZ0+SgJqE1j4+TnHBrfcTj/gDpBawAAAAAAAAABP1QCvAAAAEAa296tHl64L0yDStmj/AanatAlQ7wZdLH/Bszp1cvte/mkaTQ0uKH6rlp1bLkHV4UwI/yPuuCQA/Nsl9obRCcPAAAAAAAAAAEBsMyVAAAAQLLRsLCA8dRGzMpm6Fyf7TF6tLh2pLYtHn8U5FEPg/WTkgVT7VEVRjx8wYsJhWwibtBzg3hI5R4s+Y2qIW6ncQk=",
+      "result_xdr": "AAAAAAAAAMgAAAABKjg/U7eUwHM+SKive4pesyKw3A4+0FKecVsaDx5GdoIAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAgAAAAEAAAAAt1n11V2YYFa4nj0DWn9xi1cTG777FIo+qUQXgMsf0AsAAAAAAA2bSwAAAAFVU0RDAAAAAJHSWhidwMWtz5ZVlnT5KAmoTWPj5OccGt9xOP+AOkFrAAAAAAL82MgAAAACVEVTVE1YTgAAAAAAAAAAAObcFcHRFTUiu28Ybfo7ovNp88L51CqmP990F4oJmb5LAAAAADb2BrMAAAABAAAAALdZ9dVdmGBWuJ49A1p/cYtXExu++xSKPqlEF4DLH9ALAAAAAAANm1IAAAACVEVTVEFSUwAAAAAAAAAAAObcFcHRFTUiu28Ybfo7ovNp88L51CqmP990F4oJmb5LAAAAC6Q7dAAAAAABVVNEQwAAAACR0loYncDFrc+WVZZ0+SgJqE1j4+TnHBrfcTj/gDpBawAAAAAC/NjIAAAAAGlKyx1QTdS2DZnkX6+qT+qk/3pLpbUm9ALCSElnvxhkAAAAAlRFU1RBUlMAAAAAAAAAAADm3BXB0RU1IrtvGG36O6LzafPC+dQqpj/fdBeKCZm+SwAAAAukO3QAAAAAAAAAAAA=",
+      "fee_meta_xdr": "AAAAAgAAAAMAWkNTAAAAAAAAAACY5QVDSVBxFKLQwHMf/0ZmFOatE93KWhlcpmIhAbDMlQAAABdGzBiZAExIzwAAAYEAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAFsAAAAAAAAAADAAAAAABaPBQAAAAAawaOPwAAAAAAAAABAFpDVAAAAAAAAAAAmOUFQ0lQcRSi0MBzH/9GZhTmrRPdyloZXKZiIQGwzJUAAAAXRswX0QBMSM8AAAGBAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAABbAAAAAAAAAAAwAAAAAAWjwUAAAAAGsGjj8AAAAA",
+      "memo_type": "none",
+      "signatures": [
+        "stGwsIDx1EbMymboXJ/tMXq0uHakti0efxTkUQ+D9ZOSBVPtURVGPHzBiwmFbCJu0HODeEjlHiz5jaohbqdxCQ=="
+      ],
+      "preconditions": {
+        "timebounds": {
+          "min_time": "0",
+          "max_time": "1795601319"
+        }
+      },
+      "fee_bump_transaction": {
+        "hash": "c882ff89fbc553e08e376dc95ddb727c536d9a2854d46bed7a9b73b5eabba631",
+        "signatures": [
+          "stGwsIDx1EbMymboXJ/tMXq0uHakti0efxTkUQ+D9ZOSBVPtURVGPHzBiwmFbCJu0HODeEjlHiz5jaohbqdxCQ=="
+        ]
+      },
+      "inner_transaction": {
+        "hash": "2a383f53b794c0733e48a8af7b8a5eb322b0dc0e3ed0529e715b1a0f1e467682",
+        "signatures": [
+          "GtverR5euC9Mg0rZo/wGp2rQJUO8GXSx/wbM6dXL7Xv5pGk0NLih+q5adWy5B1eFMCP8j7rgkAPzbJfaG0QnDw=="
+        ],
+        "max_fee": "0"
+      }
+    },
+    "operations": [
+      {
+        "id": "25406775960358913",
+        "paging_token": "25406775960358913",
+        "transaction_successful": true,
+        "source_account": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "type": "path_payment_strict_receive",
+        "type_i": 2,
+        "created_at": "2026-11-25T10:03:43Z",
+        "transaction_hash": "c882ff89fbc553e08e376dc95ddb727c536d9a2854d46bed7a9b73b5eabba631",
+        "asset_type": "credit_alphanum12",
+        "asset_code": "TESTARS",
+        "asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "from": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "to": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+        "amount": "5000.0000000",
+        "path": [
+          {
+            "asset_type": "credit_alphanum4",
+            "asset_code": "USDC",
+            "asset_issuer": "GCI5EWQYTXAMLLOPSZKZM5HZFAE2QTLD4PSOOHA235YTR74AHJAWWGF4"
+          }
+        ],
+        "source_amount": "92.2093235",
+        "source_max": "93.5924634",
+        "source_asset_type": "credit_alphanum12",
+        "source_asset_code": "TESTMXN",
+        "source_asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6"
+      }
+    ],
+    "effects": [
+      {
+        "id": "0025406775960358913-0000000001",
+        "paging_token": "25406775960358913-1",
+        "account": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+        "type": "account_credited",
+        "type_i": 2,
+        "created_at": "2026-11-25T10:03:43Z",
+        "asset_type": "credit_alphanum12",
+        "asset_code": "TESTARS",
+        "asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "amount": "5000.0000000"
+      },
+      {
+        "id": "0025406775960358913-0000000002",
+        "paging_token": "25406775960358913-2",
+        "account": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "type": "account_debited",
+        "type_i": 3,
+        "created_at": "2026-11-25T10:03:43Z",
+        "asset_type": "credit_alphanum12",
+        "asset_code": "TESTMXN",
+        "asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "amount": "92.2093235"
+      },
+      {
+        "id": "0025406775960358913-0000000003",
+        "paging_token": "25406775960358913-3",
+        "account": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "type": "trade",
+        "type_i": 33,
+        "created_at": "2026-11-25T10:03:43Z",
+        "seller": "GC3VT5OVLWMGAVVYTY6QGWT7OGFVOEY3X35RJCR6VFCBPAGLD7IAW2QU",
+        "offer_id": "891723",
+        "sold_amount": "92.2093235",
+        "sold_asset_type": "credit_alphanum12",
+        "sold_asset_code": "TESTMXN",
+        "sold_asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "bought_amount": "5.0125000",
+        "bought_asset_type": "credit_alphanum4",
+        "bought_asset_code": "USDC",
+        "bought_asset_issuer": "GCI5EWQYTXAMLLOPSZKZM5HZFAE2QTLD4PSOOHA235YTR74AHJAWWGF4"
+      },
+      {
+        "id": "0025406775960358913-0000000004",
+        "paging_token": "25406775960358913-4",
+        "account": "GC3VT5OVLWMGAVVYTY6QGWT7OGFVOEY3X35RJCR6VFCBPAGLD7IAW2QU",
+        "type": "trade",
+        "type_i": 33,
+        "created_at": "2026-11-25T10:03:43Z",
+        "seller": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "offer_id": "891723",
+        "sold_amount": "5.0125000",
+        "sold_asset_type": "credit_alphanum4",
+        "sold_asset_code": "USDC",
+        "sold_asset_issuer": "GCI5EWQYTXAMLLOPSZKZM5HZFAE2QTLD4PSOOHA235YTR74AHJAWWGF4",
+        "bought_amount": "92.2093235",
+        "bought_asset_type": "credit_alphanum12",
+        "bought_asset_code": "TESTMXN",
+        "bought_asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6"
+      },
+      {
+        "id": "0025406775960358913-0000000005",
+        "paging_token": "25406775960358913-5",
+        "account": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "type": "trade",
+        "type_i": 33,
+        "created_at": "2026-11-25T10:03:43Z",
+        "seller": "GC3VT5OVLWMGAVVYTY6QGWT7OGFVOEY3X35RJCR6VFCBPAGLD7IAW2QU",
+        "offer_id": "891730",
+        "sold_amount": "5.0125000",
+        "sold_asset_type": "credit_alphanum4",
+        "sold_asset_code": "USDC",
+        "sold_asset_issuer": "GCI5EWQYTXAMLLOPSZKZM5HZFAE2QTLD4PSOOHA235YTR74AHJAWWGF4",
+        "bought_amount": "5000.0000000",
+        "bought_asset_type": "credit_alphanum12",
+        "bought_asset_code": "TESTARS",
+        "bought_asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6"
+      },
+      {
+        "id": "0025406775960358913-0000000006",
+        "paging_token": "25406775960358913-6",
+        "account": "GC3VT5OVLWMGAVVYTY6QGWT7OGFVOEY3X35RJCR6VFCBPAGLD7IAW2QU",
+        "type": "trade",
+        "type_i": 33,
+        "created_at": "2026-11-25T10:03:43Z",
+        "seller": "GACIFTGZX2DYKUSVITPQD5NUXP74XD3YHOFKLTPHWDTXDJR7KQBLZL3I",
+        "offer_id": "891730",
+        "sold_amount": "5000.0000000",
+        "sold_asset_type": "credit_alphanum12",
+        "sold_asset_code": "TESTARS",
+        "sold_asset_issuer": "GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+        "bought_amount": "5.0125000",
+        "bought_asset_type": "credit_alphanum4",
+        "bought_asset_code": "USDC",
+        "bought_asset_issuer": "GCI5EWQYTXAMLLOPSZKZM5HZFAE2QTLD4PSOOHA235YTR74AHJAWWGF4"
+      }
+    ]
+  }
+}

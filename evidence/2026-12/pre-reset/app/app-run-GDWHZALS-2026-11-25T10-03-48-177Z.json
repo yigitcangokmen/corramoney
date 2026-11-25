@@ -1,0 +1,56 @@
+{
+  "phase": "pre-reset",
+  "origin": "local",
+  "orchestrator": "http://localhost:8787",
+  "writtenAt": "2026-11-25T10:03:48.177Z",
+  "account": "GDWHZALSHOYWV7324LKLPHK3DY6I37Q44QPJ3NAGSTBREMQ3K6DHXW5Q",
+  "recipient": null,
+  "deposits": [
+    {
+      "id": "dep_07fdb3c3ebdf4db6b1434b8e7f4dfcae",
+      "status": "CONFIRMED",
+      "matchedBy": "ref",
+      "anchorRef": "7b40602f-a352-42b4-ac27-88ba8495fc0c",
+      "txHash": "f7d3b21301adbf5b8b75d244dd0ae5035eaaf2dfdbb446ed84b236d44d529730",
+      "credited": "600.0000000"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pmt_fb627b430adc43338b28fcba61bf701d",
+      "publicId": "CORRA-4FGSN4",
+      "kind": "balance",
+      "state": "CREDITED",
+      "recipient": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+      "destAsset": "TESTPHP",
+      "destAmount": "500.0000000",
+      "txHash": "269098abbcd5ce8a85c64fc90fcf7e72ab9d1e1149ca1aff62eb063b5d380452",
+      "ledger": 5915433
+    }
+  ],
+  "pool": {
+    "ops": [
+      {
+        "id": "pop_e172082059ef452cb145c27fb28ed71d",
+        "kind": "withdraw",
+        "status": "SUCCESS",
+        "pool": "CAL5ZEAT7XIP5B7AAUJD6WOVG2W7YDIE27HNF7ABQIC3HBOC42TQFWHS",
+        "amount": "20.2000000",
+        "txHash": "67072b26b295c626a421cc7c130405827dba9133e501766aae93cc6af270be2f",
+        "innerHash": "11ecd0d5cadb48fb0ac698a3d1d067d760fcc60ccc4d588e23d2e0c96cfc12bc",
+        "ledger": 5915436
+      },
+      {
+        "id": "pop_84c840d7c72c4dfca78c8fbdcfb5022a",
+        "kind": "supply",
+        "status": "SUCCESS",
+        "pool": "CAL5ZEAT7XIP5B7AAUJD6WOVG2W7YDIE27HNF7ABQIC3HBOC42TQFWHS",
+        "amount": "20.0000000",
+        "txHash": "dd4786f5c19bdbea75cf653cfe0f9a9d4c7159ecf99fd3b7b804405853aeef39",
+        "innerHash": "33da05077606656f5ca88742d2ded920ab954c36c2ee3b975e8423ae3f866bed",
+        "ledger": 5915434
+      }
+    ]
+  },
+  "cashOuts": []
+}
