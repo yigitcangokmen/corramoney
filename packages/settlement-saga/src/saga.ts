@@ -4,34 +4,24 @@ import {
   compare,
   FIAT,
   sameAsset,
+  toDecimal,
   withSlippage,
   type AssetId,
   type Corridor,
   type Payment,
+  type PaymentKind,
   type PaymentState,
   type QuoteRequest,
   type Quote,
   type Sep24Callback,
 } from '@corra/shared';
-import { assertBoundPayment, signedSequence, UnboundTransactionError, type Deposit, type StellarGateway } from '@corra/stellar';
+import { assertBoundPayment, signedSequence, signedSourceAccount, UnboundTransactionError, type Deposit, type StellarGateway } from '@corra/stellar';
 import * as E from './errors';
 import { SagaError } from './errors';
 import { isAllowedTransition, isTerminal } from './transitions';
 import type { SagaStore } from './store';
 
 export type AnchorQuote = { id: string; expiresAt: number };
-
-/**
- * The cash-out leg. CREDITED means the recipient's account holds the asset AND this handler
- * acknowledged the payout. In Phase 1 it is a mock (createMockPayout); a licensed anchor's payout
- * API takes its place in Phase 2.
- */
-export type PayoutHandler = { acknowledge(p: Payment): Promise<{ ref: string }> };
-
-/** Acknowledges every payout without moving anything, and says so in its reference. */
-export const createMockPayout = (): PayoutHandler => ({
-  acknowledge: async (p) => ({ ref: `mock-payout:${p.publicId}` }),
-});
 
 export type SagaDeps = {
   store: SagaStore;
@@ -44,12 +34,12 @@ export type SagaDeps = {
   anchorId: string;
   /** Optional SEP-38 firm quote, passed through unchanged. */
   anchorQuote?: (q: { source: Quote['source']; dest: Quote['dest'] }) => Promise<AnchorQuote | null>;
-  /** Defaults to the mock payout handler. */
-  payout?: PayoutHandler;
   now?: () => number;
   newId?: (prefix: string) => string;
   slippageBps?: number;
   quoteTtlMs?: number;
+  /** Structured events (send.created, send.settled, send.failed). Default: none. */
+  log?: (line: { evt: string } & Record<string, unknown>) => void;
 };
 
 export type ConfirmInput = {
@@ -59,6 +49,13 @@ export type ConfirmInput = {
   idemKey: string;
   /** The anchor's SEP-38 firm quote for the cash-in leg, recorded unchanged. */
   anchorQuote?: AnchorQuote;
+  /** Default 'cash_in' (Phase 1); 'balance' pays from TESTMXN the sender already holds. */
+  kind?: PaymentKind;
+  /**
+   * Balance only: the caller's per-sender rate limit, taken once the blob is proven to be the
+   * sender's and no in-flight or landed payment explains it; false refuses 429 RATE_LIMITED.
+   */
+  admit?: () => boolean;
 };
 
 const defaultId = (prefix: string) => `${prefix}_${crypto.randomUUID().replace(/-/g, '')}`;
@@ -82,8 +79,8 @@ function publicId(): string {
  * Horizon that has not ingested the last ledgers yet; this margin covers that lag.
  */
 export const EXPIRY_GRACE_SEC = 120;
-/** The reason recorded when the sender's own transactions used up the payment's sequence window. */
-export const SEQUENCE_GONE = 'sender sequence left the signing window';
+/** The reason recorded when the sender's other transactions used up the payment's sequence window, or its account is gone. */
+export const SEQUENCE_GONE = 'payment account sequence left the signing window';
 /** How many re-signs back a payment looks for a deposit it can reuse. */
 const MAX_RESIGN_CHAIN = 5;
 
@@ -97,11 +94,11 @@ const firstOpCode = (codes: unknown): string | undefined => {
 
 export function createSaga(deps: SagaDeps) {
   const now = deps.now ?? Date.now;
-  const payout = deps.payout ?? createMockPayout();
   const nowSec = () => Math.floor(now() / 1000);
   const newId = deps.newId ?? defaultId;
   const slippageBps = deps.slippageBps ?? 150;
   const quoteTtlMs = deps.quoteTtlMs ?? 120_000;
+  const log = deps.log ?? (() => {});
   const { store, gateway } = deps;
 
   const assetFor = (currency: string): AssetId => {
@@ -142,28 +139,57 @@ export function createSaga(deps: SagaDeps) {
     return q;
   }
 
-  async function createSigned(base: Quote, input: ConfirmInput, supersedesId: string | null): Promise<Payment> {
-    const q: Quote = input.anchorQuote
-      ? { ...base, anchorQuoteId: input.anchorQuote.id, anchorQuoteExpiresAt: input.anchorQuote.expiresAt }
-      : base;
+  const NOT_PAYMENT_ACCOUNT = "source is not the sender's payment account: set up the account first if you have none";
+
+  /**
+   * The blob checked offline first, against its own transaction source: operation source, the
+   * sender's signature, shape and TTL, so a junk or unsigned blob is refused with no network call.
+   * Only then is that source checked on chain (one account read): anyone can add the sender as a
+   * signer of many accounts, so where the real one sorts in the ?signer= listing must not decide.
+   * The refusal has one fixed wording: the listing is never read here, so a request costs at most
+   * one Horizon read however many accounts carry the sender as a signer.
+   */
+  async function boundPayment(q: Quote, input: ConfirmInput, mode: 'presigned' | 'balance') {
     let bound;
     try {
+      let paymentAccount: string;
+      try {
+        paymentAccount = signedSourceAccount(input.signedXdr, deps.networkPassphrase);
+      } catch {
+        throw new UnboundTransactionError('not a transaction envelope for this network');
+      }
       bound = assertBoundPayment(
         input.signedXdr,
-        { sender: input.sender, recipient: input.recipient, dest: q.dest, sendMax: q.maxSend, path: q.path },
+        { sender: input.sender, paymentAccount, recipient: input.recipient, dest: q.dest, sendMax: q.maxSend, path: q.path },
         deps.networkPassphrase,
         nowSec(),
+        mode,
       );
     } catch (e) {
       if (e instanceof UnboundTransactionError) throw E.unbound(e.message);
       throw e;
     }
+    const source = bound.sequenceAccount;
+    if (source === input.sender || !(await gateway.isPaymentAccountOf(source, input.sender))) {
+      throw E.unbound(NOT_PAYMENT_ACCOUNT);
+    }
+    return bound;
+  }
+
+  async function createSigned(base: Quote, input: ConfirmInput, supersedesId: string | null): Promise<Payment> {
+    const q: Quote = input.anchorQuote
+      ? { ...base, anchorQuoteId: input.anchorQuote.id, anchorQuoteExpiresAt: input.anchorQuote.expiresAt }
+      : base;
+    const bound = await boundPayment(q, input, 'presigned');
     if (!(await gateway.accountTrusts(input.recipient, q.dest.asset))) throw E.recipientNotReady();
     // A blob that already landed can never be settled by a new deposit: refuse before cash-in.
     if ((await gateway.getTransaction(bound.hash)).status !== 'NOT_FOUND') throw E.duplicateTransaction();
 
-    // Two pending payments from one sender share a sequence window, so only one could ever land.
-    // One already being settled blocks a new one; one still waiting for cash-in is superseded.
+    // One pending payment per sender: one already being settled blocks a new one; one still waiting
+    // for cash-in is superseded, so Corra never submits it. Superseding is a ledger rule, not a chain
+    // one: two blobs in the same slot of the payment account's window can never both land, but a
+    // superseded blob in another slot stays valid until its maxTime, and anyone holding it can
+    // fee-bump it.
     const pending = await store.listBySender(input.sender, ['SIGNED', 'CASH_IN', 'ONCHAIN']);
     if (pending.some((o) => o.state !== 'SIGNED')) throw E.paymentInProgress();
 
@@ -173,6 +199,7 @@ export function createSaga(deps: SagaDeps) {
       const p: Payment = {
         id: newId('pmt'),
         publicId: publicId(),
+        kind: 'cash_in',
         senderAccount: input.sender,
         recipientAccount: input.recipient,
         corridor: q.corridor,
@@ -188,10 +215,12 @@ export function createSaga(deps: SagaDeps) {
         updatedAt: t,
       };
       try {
-        ({ payment } = await store.createPayment(p, [
+        const r = await store.createPayment(p, [
           { type: 'QUOTED', from: null, to: 'QUOTED', data: { quoteId: q.id } },
           { type: 'SIGNED', from: 'QUOTED', to: 'SIGNED', data: { innerTxHash: bound.hash, maxTime: bound.maxTime } },
-        ]));
+        ]);
+        // A concurrent request with the same key won: it is a replay only if it is the same request.
+        payment = r.created ? r.payment : replayOf(r.payment, q.id, input);
       } catch (e) {
         if (!(e instanceof SagaError && e.code === 'PUBLIC_ID_TAKEN') || attempt >= 3) throw e;
       }
@@ -204,6 +233,85 @@ export function createSaga(deps: SagaDeps) {
     return payment;
   }
 
+  /**
+   * A payment from the sender's balance: the blob is the payment account's next transaction and the money
+   * is already in the account, so it is created directly in CASH_IN (one write, three events) and
+   * submitted right away. Every refusal happens before any row exists.
+   */
+  /**
+   * A request racing another with the same idempotency key may find the winner's effects (its
+   * in-flight row, its landed transaction, a unique index) before the winner's row by key: any
+   * refusal is re-checked against the key, so a retry still yields the same result.
+   */
+  async function createBalance(q: Quote, input: ConfirmInput, supersedesId: string | null): Promise<Payment> {
+    try {
+      return await createBalanceOnce(q, input, supersedesId);
+    } catch (e) {
+      if (!(e instanceof SagaError)) throw e;
+      const won = await store.getPaymentByIdemKey(input.idemKey);
+      if (won) return replayOf(won, q.id, input);
+      throw e;
+    }
+  }
+
+  async function createBalanceOnce(q: Quote, input: ConfirmInput, supersedesId: string | null): Promise<Payment> {
+    const bound = await boundPayment(q, input, 'balance');
+    if (!(await gateway.accountTrusts(input.recipient, q.dest.asset))) throw E.recipientNotReady();
+    if ((await gateway.getTransaction(bound.hash)).status !== 'NOT_FOUND') throw E.duplicateTransaction();
+    const pending = await store.listBySender(input.sender, ['SIGNED', 'CASH_IN', 'ONCHAIN']);
+    // Read after the pending list: a winner with this key seen there is seen here too, and a
+    // replay never spends a rate-limit token.
+    const won = await store.getPaymentByIdemKey(input.idemKey);
+    if (won) return replayOf(won, q.id, input);
+    if (pending.some((o) => o.state !== 'SIGNED')) throw E.paymentInProgress();
+    // A SIGNED pre-signed blob (payment account sequence + 100, minSeqNum at the sequence it was
+    // signed at) stays valid after this one lands at sequence + 1, so both could land: refused
+    // until it is credited or expires (a new /confirm only adds another SIGNED one).
+    if (pending.length) throw E.signedPaymentWaiting();
+    if (input.admit && !input.admit()) throw E.rateLimited();
+    const bal = await gateway.accountBalance(input.sender, q.maxSend.asset);
+    if (!bal || compare(bal, q.maxSend) < 0) throw E.insufficientBalance(bal, q.maxSend);
+    // A stale blob would otherwise sit in CASH_IN, unlandable, until its maxTime passed.
+    const cur = await gateway.accountSequence(bound.sequenceAccount);
+    if (cur === null || BigInt(bound.sequence) !== cur + 1n) throw E.unbound("sequence is not the payment account's next");
+
+    const t = now();
+    for (let attempt = 0; ; attempt++) {
+      const pid = publicId();
+      const p: Payment = {
+        id: newId('pmt'),
+        publicId: pid,
+        kind: 'balance',
+        senderAccount: input.sender,
+        recipientAccount: input.recipient,
+        corridor: q.corridor,
+        quote: q,
+        state: 'CASH_IN',
+        // A marker, not an anchor deposit: no anchorId, so it never meets the (anchor_id, external_ref) index.
+        legs: [{ kind: 'cash_in', status: 'CONFIRMED', amount: q.maxSend, externalRef: `balance:${pid}` }],
+        idemKey: input.idemKey,
+        signedXdr: input.signedXdr,
+        innerTxHash: bound.hash,
+        maxTime: bound.maxTime,
+        supersedesId,
+        createdAt: t,
+        updatedAt: t,
+      };
+      try {
+        const { payment, created } = await store.createPayment(p, [
+          { type: 'QUOTED', from: null, to: 'QUOTED', data: { quoteId: q.id } },
+          { type: 'SIGNED', from: 'QUOTED', to: 'SIGNED', data: { innerTxHash: bound.hash, maxTime: bound.maxTime } },
+          { type: 'CASH_IN', from: 'SIGNED', to: 'CASH_IN', data: { source: 'balance', balance: toDecimal(bal) } },
+        ]);
+        if (!created) return replayOf(payment, q.id, input);
+        log({ evt: 'send.created', id: payment.id, publicId: payment.publicId, sender: input.sender });
+        return payment;
+      } catch (e) {
+        if (!(e instanceof SagaError && e.code === 'PUBLIC_ID_TAKEN') || attempt >= 3) throw e;
+      }
+    }
+  }
+
   async function liveQuote(quoteId: string) {
     const q = await store.getQuote(quoteId);
     if (!q) throw E.quoteNotFound();
@@ -213,7 +321,7 @@ export function createSaga(deps: SagaDeps) {
 
   /** A replay must be the same request; the same key for a different one is refused. */
   function replayOf(existing: Payment, quoteId: string, input: ConfirmInput): Payment {
-    const same = existing.quote.id === quoteId &&
+    const same = existing.quote.id === quoteId && existing.kind === (input.kind ?? 'cash_in') &&
       existing.senderAccount === input.sender && existing.recipientAccount === input.recipient;
     if (!same) throw E.idempotencyReused();
     return existing;
@@ -223,17 +331,21 @@ export function createSaga(deps: SagaDeps) {
     // A replay with the same idempotency key returns the same payment, even after the quote TTL.
     const existing = await store.getPaymentByIdemKey(input.idemKey);
     if (existing) return replayOf(existing, quoteId, input);
-    return createSigned(await liveQuote(quoteId), input, null);
+    const q = await liveQuote(quoteId);
+    return (input.kind ?? 'cash_in') === 'balance' ? createBalance(q, input, null) : createSigned(q, input, null);
   }
 
-  async function resign(supersedesId: string, quoteId: string, signedXdr: string, idemKey: string, anchorQuote?: AnchorQuote) {
+  async function resign(
+    supersedesId: string, quoteId: string, signedXdr: string, idemKey: string, anchorQuote?: AnchorQuote, admit?: () => boolean,
+  ) {
     const old = await store.getPayment(supersedesId);
     if (!old) throw E.paymentNotFound();
-    const input = { sender: old.senderAccount, recipient: old.recipientAccount, signedXdr, idemKey, anchorQuote };
+    const input = { sender: old.senderAccount, recipient: old.recipientAccount, signedXdr, idemKey, anchorQuote, kind: old.kind, admit };
     const existing = await store.getPaymentByIdemKey(idemKey);
     if (existing) return replayOf(existing, quoteId, input);
     if (old.state !== 'EXPIRED' && old.state !== 'CAP_EXCEEDED' && old.state !== 'FAILED') throw E.notResignable();
-    return createSigned(await liveQuote(quoteId), input, old.id);
+    const q = await liveQuote(quoteId);
+    return old.kind === 'balance' ? createBalance(q, input, old.id) : createSigned(q, input, old.id);
   }
 
   async function linkCashIn(paymentId: string, ref: string) {
@@ -272,7 +384,7 @@ export function createSaga(deps: SagaDeps) {
     // process, or the sender, who holds it too), a landed transaction decides the outcome.
     const landed = await gateway.getTransaction(p.innerTxHash);
     if (landed.status !== 'NOT_FOUND') {
-      return settle(p, landed.status === 'SUCCESS' ? 'success' : outcomeOf(landed.codes), landed.hash ?? p.innerTxHash, landed.codes);
+      return settle(p, landed.status === 'SUCCESS' ? 'success' : outcomeOf(landed.codes), landed.hash ?? p.innerTxHash, landed.codes, landed.ledger);
     }
 
     if (p.state === 'SIGNED') {
@@ -295,7 +407,7 @@ export function createSaga(deps: SagaDeps) {
     if (nowSec() >= p.maxTime || !p.signedXdr) return p;
 
     const out = await gateway.submitPayment(p.signedXdr);
-    if (out.kind === 'success') return settle(p, 'success', out.hash, undefined);
+    if (out.kind === 'success') return settle(p, 'success', out.hash, undefined, out.ledger);
     if ((out.kind === 'cap_exceeded' || out.kind === 'failed') && out.hash) {
       const code = firstOpCode(out.codes);
       return settle(p, out.kind === 'cap_exceeded' ? 'cap_exceeded' : outcomeOf(code), out.hash, code);
@@ -309,17 +421,18 @@ export function createSaga(deps: SagaDeps) {
   }
 
   /**
-   * True once the sender's account has used the sequence number the signed payment needs (it
-   * submitted other transactions in between): the payment can never land. expire() still takes
-   * a last look at the chain, in case it was this very payment that used it.
+   * True once the account whose sequence the signed payment consumes (its transaction source: the
+   * payment account, or the sender for a blob signed before the payment-account fix) has used that
+   * sequence number, or no longer exists (the sender merged it): the payment can never land.
+   * expire() still takes a last look at the chain, in case it was this very payment that used it.
    */
   /** When this process first saw a payment's sequence used up (per payment id). */
   const seqGoneSince = new Map<string, number>();
 
   async function sequenceLeftWindow(p: Payment): Promise<boolean> {
     if (!p.signedXdr) return false;
-    const current = await gateway.accountSequence(p.senderAccount);
-    if (current === null || current < signedSequence(p.signedXdr, deps.networkPassphrase)) {
+    const current = await gateway.accountSequence(signedSourceAccount(p.signedXdr, deps.networkPassphrase));
+    if (current !== null && current < signedSequence(p.signedXdr, deps.networkPassphrase)) {
       seqGoneSince.delete(p.id);
       return false;
     }
@@ -360,7 +473,8 @@ export function createSaga(deps: SagaDeps) {
     return total;
   }
 
-  async function settle(p: Payment, outcome: Outcome, hash: string, codes: string | undefined): Promise<Payment> {
+  async function settle(p: Payment, outcome: Outcome, hash: string, codes: string | undefined, ledger?: number): Promise<Payment> {
+    const at = ledger === undefined ? {} : { ledger };
     let cur = p;
     if (cur.state === 'SIGNED') {
       // The blob landed without a matched anchor deposit (e.g. the sender submitted it).
@@ -371,35 +485,40 @@ export function createSaga(deps: SagaDeps) {
     }
     if (cur.state === 'CASH_IN') {
       const moved = await move(cur, 'ONCHAIN',
-        { legs: [{ kind: 'onchain', status: 'PENDING', amount: cur.quote.dest, txHash: hash }] }, { txHash: hash });
+        { legs: [{ kind: 'onchain', status: 'PENDING', amount: cur.quote.dest, txHash: hash }] }, { txHash: hash, ...at });
       if (!moved) return reload(cur.id);
       cur = moved;
     }
     if (outcome === 'success') {
-      // The recipient holds the asset; CREDITED also needs the payout handler's acknowledgement.
-      // If it fails, the payment stays ONCHAIN and the next reconcile pass asks again.
-      const ack = await payout.acknowledge(cur);
+      // CREDITED: the onchain leg landed; the destination amount is in the recipient's own account.
+      // The cash-out is recorded later on the same leg (cash-out.ts), never as a payment state.
       const done = await move(cur, 'CREDITED', {
         signedXdr: null,
         legs: [
           { kind: 'onchain', status: 'CONFIRMED', txHash: hash },
-          { kind: 'cash_out', status: 'CONFIRMED', amount: cur.quote.dest, externalRef: ack.ref },
+          { kind: 'cash_out', status: 'PENDING', amount: cur.quote.dest, anchorId: deps.anchorId },
         ],
-      }, { txHash: hash, payoutRef: ack.ref });
+      }, { txHash: hash, ...at });
+      if (done) settled(done, 'send.settled', ledger);
       return done ?? reload(cur.id);
     }
     const to: PaymentState = outcome === 'cap_exceeded' ? 'CAP_EXCEEDED' : 'FAILED';
     const done = await move(cur, to,
       { signedXdr: null, legs: [{ kind: 'onchain', status: 'FAILED', txHash: hash }] },
-      { txHash: hash, codes: codes ?? null });
+      { txHash: hash, ...at, codes: codes ?? null });
+    if (done) settled(done, 'send.failed', ledger, codes);
     return done ?? reload(cur.id);
+  }
+
+  function settled(p: Payment, evt: string, ledger?: number, codes?: string) {
+    if (p.kind === 'balance') log({ evt, id: p.id, publicId: p.publicId, ledger, codes });
   }
 
   async function expire(p: Payment, reason: string, extra: Record<string, unknown> = {}) {
     // Last look at the chain before calling it dead.
     const landed = await gateway.getTransaction(p.innerTxHash);
     if (landed.status !== 'NOT_FOUND') {
-      return settle(p, landed.status === 'SUCCESS' ? 'success' : outcomeOf(landed.codes), landed.hash ?? p.innerTxHash, landed.codes);
+      return settle(p, landed.status === 'SUCCESS' ? 'success' : outcomeOf(landed.codes), landed.hash ?? p.innerTxHash, landed.codes, landed.ledger);
     }
     return move(p, 'EXPIRED', { signedXdr: null, legs: [{ kind: 'cash_in', status: p.state === 'SIGNED' ? 'FAILED' : 'CONFIRMED' }] },
       { reason, ...extra });
@@ -444,12 +563,13 @@ export function createSaga(deps: SagaDeps) {
     reconcileAll,
     getPayment: reload,
     findByIdemKey: (idemKey: string) => store.getPaymentByIdemKey(idemKey),
+    listPayments: (account: string, role: 'sender' | 'recipient', limit: number) => store.listByAccount(account, role, limit),
     events: (id: string) => store.events(id),
     isTerminal,
   };
 }
 
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error(`timed out after ${ms} ms`)), ms);
     p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });

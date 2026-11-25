@@ -1,10 +1,16 @@
 import type { Leg, LegKind, Payment, PaymentEvent, PaymentState, Quote } from '@corra/shared';
-import { alreadySuperseded, cashInAlreadyLinked, duplicateTransaction, publicIdTaken, quoteUsed } from './errors';
+import { alreadySuperseded, cashInAlreadyLinked, cashOutRefTaken, duplicateTransaction, paymentInProgress, publicIdTaken, quoteUsed } from './errors';
 import { PENDING_STATES } from './transitions';
 
 export type LegUpdate = Partial<Leg> & { kind: LegKind };
 
 export type NewEvent = { type: string; from: PaymentState | null; to: PaymentState | null; data?: Record<string, unknown> };
+
+/** A change to the cash_out leg: undefined keeps a field, null clears it. */
+export type CashOutPatch = { externalRef?: string | null; txHash?: string | null; status?: 'CONFIRMED' };
+
+/** recordCashOut writes nothing when the payment already has an event of `type` whose data contains every field of `match`. */
+export type CashOutUnless = { type: string; match: Record<string, unknown> };
 
 /**
  * Persistence the saga needs. Every state change goes through `transition`, which must be
@@ -16,7 +22,8 @@ export interface SagaStore {
   /**
    * Idempotent on payment.idemKey. Throws quoteUsed if the quote already belongs to another
    * payment, duplicateTransaction if the signed transaction already backs one, publicIdTaken on
-   * a public id collision.
+   * a public id collision, paymentInProgress when another balance payment of the sender is
+   * between creation and its outcome (CASH_IN or ONCHAIN).
    */
   createPayment(p: Payment, events: NewEvent[]): Promise<{ payment: Payment; created: boolean }>;
   /** By internal id, or by the public id (CORRA-XXXXXX). */
@@ -24,6 +31,8 @@ export interface SagaStore {
   getPaymentByIdemKey(idemKey: string): Promise<Payment | null>;
   /** Payments of one sender in any of `states`, oldest first. */
   listBySender(sender: string, states: PaymentState[]): Promise<Payment[]>;
+  /** Payments where `account` is the sender or the recipient, newest first, at most `limit`. */
+  listByAccount(account: string, role: 'sender' | 'recipient', limit: number): Promise<Payment[]>;
   findPaymentByCashInRef(anchorId: string, ref: string): Promise<Payment | null>;
   /** Links the anchor's SEP-24 transaction id to the cash-in leg. Unique per (anchorId, ref): a ref already used by another payment throws cashInAlreadyLinked. */
   linkCashIn(paymentId: string, anchorId: string, ref: string): Promise<void>;
@@ -38,6 +47,22 @@ export interface SagaStore {
   /** Pending payments not updated for at least `idleMs`. */
   listPending(idleMs: number, now: number): Promise<Payment[]>;
   events(id: string): Promise<PaymentEvent[]>;
+  /**
+   * One transaction: lock the payment; apply only if it is CREDITED, its cash_out leg exists and is
+   * not CONFIRMED, and the leg's tx_hash equals `expectTxHash` (null = none). Writes the patch with
+   * explicit values (never COALESCE), sets the leg's updated_at, appends `event` (from = to =
+   * 'CREDITED', the next seq). Never changes the payment's state or updated_at. Returns the payment,
+   * or null when a condition failed (nothing written). Throws cashOutRefTaken when the ref belongs
+   * to another leg of this anchor, duplicateTransaction when the tx hash backs another cash-out leg.
+   * With `unless`, also null when that event already exists, checked under the same lock: an
+   * event written once per key stays once under concurrent writers.
+   */
+  recordCashOut(paymentId: string, expectTxHash: string | null, patch: CashOutPatch, event: NewEvent, unless?: CashOutUnless): Promise<Payment | null>;
+  findPaymentByCashOutRef(anchorId: string, ref: string): Promise<Payment | null>;
+  /** CREDITED payments whose cash_out leg is PENDING with a tx_hash, idle for at least `idleMs`; oldest first; at most `limit`. */
+  listOpenCashOuts(idleMs: number, now: number, limit: number): Promise<Payment[]>;
+  /** Bumps the cash_out leg's updated_at after a check that changed nothing. */
+  touchCashOut(paymentId: string): Promise<void>;
 }
 
 const applyLegs = (legs: Leg[], updates: LegUpdate[] = []): Leg[] => {
@@ -56,6 +81,12 @@ export class InMemorySagaStore implements SagaStore {
   private payments = new Map<string, Payment>();
   private byIdem = new Map<string, string>();
   private cashInRefs = new Map<string, string>();
+  /** Shares the (anchorId, ref) key space with cashInRefs, like the SQL constraint. */
+  private cashOutRefs = new Map<string, string>();
+  /** Mirror of legs_cash_out_tx_key: tx hash -> payment id. */
+  private cashOutTx = new Map<string, string>();
+  /** The cash_out leg's updated_at, per payment id. */
+  private cashOutAt = new Map<string, number>();
   private log = new Map<string, PaymentEvent[]>();
 
   constructor(private now: () => number = Date.now) {}
@@ -76,6 +107,9 @@ export class InMemorySagaStore implements SagaStore {
     if (owner && owner !== p.id) throw quoteUsed();
     const all = [...this.payments.values()];
     if (all.some((o) => o.innerTxHash === p.innerTxHash)) throw duplicateTransaction();
+    // Mirror of the payments_balance_in_flight_key index.
+    if (p.kind === 'balance' && all.some((o) => o.kind === 'balance' && o.senderAccount === p.senderAccount &&
+        (o.state === 'CASH_IN' || o.state === 'ONCHAIN'))) throw paymentInProgress();
     if (p.supersedesId && all.some((o) => o.supersedesId === p.supersedesId)) throw alreadySuperseded();
     if (all.some((o) => o.publicId === p.publicId)) throw publicIdTaken();
     this.quoteOwner.set(p.quote.id, p.id);
@@ -103,6 +137,14 @@ export class InMemorySagaStore implements SagaStore {
       .map((p) => structuredClone(p));
   }
 
+  async listByAccount(account: string, role: 'sender' | 'recipient', limit: number) {
+    return [...this.payments.values()]
+      .filter((p) => (role === 'sender' ? p.senderAccount : p.recipientAccount) === account)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit)
+      .map((p) => structuredClone(p));
+  }
+
   async findPaymentByCashInRef(anchorId: string, ref: string) {
     const id = this.cashInRefs.get(`${anchorId}|${ref}`);
     return id ? this.getPayment(id) : null;
@@ -111,7 +153,7 @@ export class InMemorySagaStore implements SagaStore {
   async linkCashIn(paymentId: string, anchorId: string, ref: string) {
     const key = `${anchorId}|${ref}`;
     const owner = this.cashInRefs.get(key);
-    if (owner && owner !== paymentId) throw cashInAlreadyLinked();
+    if ((owner && owner !== paymentId) || this.cashOutRefs.has(key)) throw cashInAlreadyLinked();
     const p = this.payments.get(paymentId);
     if (!p) return;
     this.cashInRefs.set(key, paymentId);
@@ -132,6 +174,7 @@ export class InMemorySagaStore implements SagaStore {
     if (patch.signedXdr !== undefined) p.signedXdr = patch.signedXdr;
     p.legs = applyLegs(p.legs, patch.legs);
     p.updatedAt = this.now();
+    if (patch.legs?.some((l) => l.kind === 'cash_out')) this.cashOutAt.set(id, this.now());
     const log = this.log.get(id)!;
     log.push({ ...event, seq: log.length + 1, at: this.now() });
     return structuredClone(p);
@@ -145,5 +188,63 @@ export class InMemorySagaStore implements SagaStore {
 
   async events(id: string) {
     return structuredClone(this.log.get(id) ?? []);
+  }
+
+  async recordCashOut(paymentId: string, expectTxHash: string | null, patch: CashOutPatch, event: NewEvent, unless?: CashOutUnless) {
+    const p = this.payments.get(paymentId);
+    if (!p || p.state !== 'CREDITED') return null;
+    const leg = p.legs.find((l) => l.kind === 'cash_out');
+    if (!leg || leg.status === 'CONFIRMED' || (leg.txHash ?? null) !== expectTxHash) return null;
+    if (unless && this.log.get(paymentId)!.some((e) => e.type === unless.type &&
+      Object.entries(unless.match).every(([k, v]) => (e.data ?? {})[k] === v))) return null;
+    if (patch.externalRef) {
+      const key = `${leg.anchorId}|${patch.externalRef}`;
+      const owner = this.cashOutRefs.get(key);
+      if (this.cashInRefs.has(key) || (owner && owner !== paymentId)) throw cashOutRefTaken();
+    }
+    if (patch.txHash) {
+      const owner = this.cashOutTx.get(patch.txHash);
+      if (owner && owner !== paymentId) throw duplicateTransaction();
+    }
+    if (patch.externalRef !== undefined) {
+      if (leg.externalRef) this.cashOutRefs.delete(`${leg.anchorId}|${leg.externalRef}`);
+      if (patch.externalRef === null) delete leg.externalRef;
+      else {
+        leg.externalRef = patch.externalRef;
+        this.cashOutRefs.set(`${leg.anchorId}|${patch.externalRef}`, paymentId);
+      }
+    }
+    if (patch.txHash !== undefined) {
+      if (leg.txHash) this.cashOutTx.delete(leg.txHash);
+      if (patch.txHash === null) delete leg.txHash;
+      else {
+        leg.txHash = patch.txHash;
+        this.cashOutTx.set(patch.txHash, paymentId);
+      }
+    }
+    if (patch.status) leg.status = patch.status;
+    this.cashOutAt.set(paymentId, this.now());
+    const log = this.log.get(paymentId)!;
+    log.push({ ...event, seq: log.length + 1, at: this.now() });
+    return structuredClone(p);
+  }
+
+  async findPaymentByCashOutRef(anchorId: string, ref: string) {
+    const id = this.cashOutRefs.get(`${anchorId}|${ref}`);
+    return id ? this.getPayment(id) : null;
+  }
+
+  async listOpenCashOuts(idleMs: number, now: number, limit: number) {
+    const at = (p: Payment) => this.cashOutAt.get(p.id) ?? p.updatedAt;
+    return [...this.payments.values()]
+      .filter((p) => p.state === 'CREDITED' && p.legs.some((l) => l.kind === 'cash_out' && l.status === 'PENDING' && l.txHash))
+      .filter((p) => at(p) <= now - idleMs)
+      .sort((a, b) => at(a) - at(b))
+      .slice(0, limit)
+      .map((p) => structuredClone(p));
+  }
+
+  async touchCashOut(paymentId: string) {
+    if (this.payments.has(paymentId)) this.cashOutAt.set(paymentId, this.now());
   }
 }
