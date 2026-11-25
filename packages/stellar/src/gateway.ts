@@ -1,8 +1,9 @@
 import * as S from '@stellar/stellar-sdk';
-import { add, fromDecimal, sameAsset, toDecimal, type AssetId, type Money } from '@corra/shared';
+import { add, fromDecimal, parseUnits, sameAsset, toDecimal, type AssetId, type Money } from '@corra/shared';
 import { classifySubmitError, type SubmitOutcome } from './submit';
 import type { Sponsor } from './sponsor';
 import { FEE_BUMP_BASE, MAX_FEE_BUMP_BASE, toSdkAsset } from './build';
+import { isPaymentAccount } from './payment-account';
 
 export type PathResult = { path: AssetId[]; source: Money };
 
@@ -15,16 +16,28 @@ export interface StellarGateway {
   submitPayment(signedInnerXdr: string): Promise<SubmitOutcome>;
   /** `codes` names the first failing result for a FAILED transaction, e.g. `op_over_source_max`. */
   /** Looks up a transaction by its inner hash. `hash` is the fee-bump envelope's hash when there is one. */
-  getTransaction(hash: string): Promise<{ status: 'SUCCESS' | 'FAILED' | 'NOT_FOUND'; ledger?: number; codes?: string; hash?: string }>;
+  /** `memoHash` is the transaction's memo (base64) when it is a hash memo. */
+  /** `envelopeXdr` is the envelope that landed (the fee-bump when there is one). */
+  getTransaction(hash: string): Promise<{
+    status: 'SUCCESS' | 'FAILED' | 'NOT_FOUND'; ledger?: number; codes?: string; hash?: string; memoHash?: string; envelopeXdr?: string;
+  }>;
   /** Credit of `asset` from `from` to `account` at or after `since` (ms). With `memo` (base64 hash), the sum of every credit carrying it, stamped with the latest one's hash. */
   findDeposit(p: { account: string; from: string; asset: AssetId; since: number; memo?: string }): Promise<Deposit | null>;
   /** False when the account does not exist or holds no trustline for the asset. */
   accountTrusts(account: string, asset: AssetId): Promise<boolean>;
   /** The account's current sequence number, or null when the account does not exist. */
   accountSequence(account: string): Promise<bigint | null>;
+  /** The sender's payment account (the lowest id if there are several), or null when it has none or it was merged. */
+  paymentAccountOf(sender: string): Promise<string | null>;
+  /** True iff `account` exists and is a payment account of `sender` (whatever its place in the ?signer= listing). */
+  isPaymentAccountOf(account: string, sender: string): Promise<boolean>;
+  /** Spendable amount of `asset` (balance minus selling liabilities), or null when the account or the trustline does not exist. */
+  accountBalance(account: string, asset: AssetId): Promise<Money | null>;
 }
 
 const MAX_DEPOSIT_PAGES = 20;
+/** Anyone can add a sender as a signer of their own accounts, so the ?signer= listing is read to its end, up to this many pages of 200. */
+const MAX_SIGNER_PAGES = 50;
 
 const assetOf = (code?: string, issuer?: string): AssetId => (code && issuer ? { code, issuer } : { code: 'XLM' });
 
@@ -43,8 +56,10 @@ export function failureCode(resultXdr: string): string {
     if (!r.tx_failed) return Object.keys(r)[0] ?? 'tx_failed';
     for (const op of r.tx_failed) {
       if (!op.op_inner) return typeof op === 'string' ? op : (Object.keys(op)[0] ?? 'op_failed');
-      const code = Object.values(op.op_inner)[0];
+      const [arm, code] = Object.entries(op.op_inner)[0] ?? [];
       if (typeof code !== 'string' || code === 'success') continue;
+      // The short invoke-host-function codes (`trapped`, ...) keep their operation name.
+      if (arm === 'invoke_host_function') return 'op_invoke_host_function_' + code;
       // Horizon reports the protocol's OVER_SENDMAX as op_over_source_max.
       return code === 'over_sendmax' ? 'op_over_source_max' : 'op_' + code;
     }
@@ -82,8 +97,11 @@ export function createHorizonGateway(opts: {
       const t = await horizon.transactions().transaction(hash).call();
       // Queried by the inner hash, Horizon echoes it in `hash`; the envelope that landed is the fee-bump.
       const landed = (t as any).fee_bump_transaction?.hash ?? t.hash;
-      if (t.successful) return { status: 'SUCCESS', ledger: t.ledger_attr, hash: landed };
-      return { status: 'FAILED', ledger: t.ledger_attr, codes: failureCode(t.result_xdr), hash: landed };
+      // Horizon serves hash memos in base64, the encoding cashInMemo produces.
+      const memo = t.memo_type === 'hash' && t.memo ? { memoHash: t.memo } : {};
+      const envelope = t.envelope_xdr ? { envelopeXdr: t.envelope_xdr } : {};
+      if (t.successful) return { status: 'SUCCESS', ledger: t.ledger_attr, hash: landed, ...memo, ...envelope };
+      return { status: 'FAILED', ledger: t.ledger_attr, codes: failureCode(t.result_xdr), hash: landed, ...memo, ...envelope };
     } catch (e: any) {
       if (e?.response?.status === 404) return { status: 'NOT_FOUND' };
       throw e;
@@ -171,6 +189,41 @@ export function createHorizonGateway(opts: {
     async accountSequence(account) {
       try {
         return BigInt((await horizon.loadAccount(account)).sequence);
+      } catch (e: any) {
+        if (e?.response?.status === 404) return null;
+        throw e;
+      }
+    },
+
+    async paymentAccountOf(sender) {
+      // Horizon lists ?signer= in ascending account id across pages, so the first page with a match holds the lowest.
+      let page = await horizon.accounts().forSigner(sender).limit(200).call();
+      for (let n = 1; ; n++) {
+        const ids = page.records.filter((r) => isPaymentAccount(r, sender, opts.sponsor.publicKey)).map((r) => r.id);
+        if (ids.length) return ids.sort()[0];
+        if (page.records.length < 200 || n >= MAX_SIGNER_PAGES) return null;
+        page = await page.next();
+      }
+    },
+
+    async isPaymentAccountOf(account, sender) {
+      try {
+        return isPaymentAccount(await horizon.loadAccount(account) as any, sender, opts.sponsor.publicKey);
+      } catch (e: any) {
+        if (e?.response?.status === 404) return false;
+        throw e;
+      }
+    },
+
+    async accountBalance(account, asset) {
+      try {
+        const a = await horizon.loadAccount(account);
+        const line: any = a.balances.find(
+          (b: any) => b.asset_type !== 'native' && sameAsset(assetOf(b.asset_code, b.asset_issuer), asset),
+        );
+        if (!line) return null;
+        const raw = parseUnits(line.balance) - parseUnits(line.selling_liabilities ?? '0');
+        return { asset, raw: raw > 0n ? raw : 0n };
       } catch (e: any) {
         if (e?.response?.status === 404) return null;
         throw e;

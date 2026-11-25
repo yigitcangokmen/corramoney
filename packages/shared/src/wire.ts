@@ -2,7 +2,7 @@
 import type { AssetId } from './assets';
 import { fromDecimal, toDecimal, type Money } from './money';
 import type { Corridor } from './corridors';
-import type { Leg, Payment, PaymentEvent, Quote } from './types';
+import type { Deposit, Leg, Payment, PaymentEvent, PoolOp, Quote } from './types';
 
 export type MoneyWire = { amount: string; asset: string; issuer?: string };
 export type AssetWire = { code: string; issuer?: string };
@@ -76,4 +76,23 @@ export const paymentToWire = (p: Payment, events?: PaymentEvent[]): PaymentWire 
     legs: legs.map((l) => ({ ...l, amount: moneyToWire(l.amount) })),
     ...(events ? { events } : {}),
   };
+};
+
+export type DepositWire = Omit<Deposit, 'anchorId' | 'requested' | 'credited'> & {
+  requested: MoneyWire;
+  credited: MoneyWire | null;
+};
+
+/** API view of a deposit. */
+export const depositToWire = (d: Deposit): DepositWire => {
+  const { anchorId: _a, requested, credited, ...rest } = d;
+  return { ...rest, requested: moneyToWire(requested), credited: credited ? moneyToWire(credited) : null };
+};
+
+export type PoolOpWire = Omit<PoolOp, 'idemKey' | 'amount' | 'resourceFee'> & { amount: MoneyWire; resourceFee: string | null };
+
+/** API view of a pool op. The idempotency key never leaves the server. */
+export const poolOpToWire = (o: PoolOp): PoolOpWire => {
+  const { idemKey: _k, amount, resourceFee, ...rest } = o;
+  return { ...rest, amount: moneyToWire(amount), resourceFee: resourceFee === null ? null : resourceFee.toString() };
 };

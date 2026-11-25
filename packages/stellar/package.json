@@ -9,11 +9,12 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@blend-capital/blend-sdk": "4.0.0",
     "typescript": "^5.6.3",
     "vitest": "^3.2.7"
   },
   "dependencies": {
     "@corra/shared": "workspace:^",
-    "@stellar/stellar-sdk": "^17.2.1"
+    "@stellar/stellar-sdk": "17.4.0"
   }
 }

@@ -4,7 +4,7 @@ export type SubmitOutcome =
   | { kind: 'cap_exceeded'; hash?: string; codes: unknown }
   /** maxTime passed: never entered a ledger. */
   | { kind: 'expired'; codes: unknown }
-  /** the sender's sequence moved outside the minSeqNum window: permanently dead. */
+  /** the sequence moved outside the minSeqNum window, or its account is gone (merged): permanently dead. */
   | { kind: 'bad_seq'; codes: unknown }
   | { kind: 'failed'; hash?: string; codes: unknown };
 
@@ -26,6 +26,6 @@ export function classifySubmitError(data: HorizonErrorData | undefined): SubmitO
     return { kind: 'cap_exceeded', hash, codes };
   }
   if (txCode === 'tx_too_late') return { kind: 'expired', codes };
-  if (txCode === 'tx_bad_seq' || txCode === 'tx_bad_minseq_age_or_gap') return { kind: 'bad_seq', codes };
+  if (txCode === 'tx_bad_seq' || txCode === 'tx_bad_minseq_age_or_gap' || txCode === 'tx_no_account') return { kind: 'bad_seq', codes };
   return { kind: 'failed', hash, codes };
 }
