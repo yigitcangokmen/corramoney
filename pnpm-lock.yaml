@@ -4,16 +4,22 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@stellar/stellar-sdk': 17.4.0
+
 importers:
 
   .:
     devDependencies:
+      '@blend-capital/blend-sdk':
+        specifier: 4.0.0
+        version: 4.0.0
       '@stellar/stellar-sdk':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: 17.4.0
+        version: 17.4.0
       '@stellar/typescript-wallet-sdk':
-        specifier: ^5
-        version: 5.0.0
+        specifier: 6.0.0
+        version: 6.0.0
       '@types/node':
         specifier: ^22
         version: 22.20.5
@@ -51,6 +57,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@blend-capital/blend-sdk':
+        specifier: 4.0.0
+        version: 4.0.0
       '@corra/shared':
         specifier: workspace:^
         version: link:../../packages/shared
@@ -61,11 +70,11 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       '@stellar/stellar-sdk':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: 17.4.0
+        version: 17.4.0
       '@stellar/typescript-wallet-sdk':
-        specifier: ^5
-        version: 5.0.0
+        specifier: 6.0.0
+        version: 6.0.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -102,8 +111,8 @@ importers:
         version: link:../stellar
     devDependencies:
       '@stellar/stellar-sdk':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: 17.4.0
+        version: 17.4.0
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -126,9 +135,12 @@ importers:
         specifier: workspace:^
         version: link:../shared
       '@stellar/stellar-sdk':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: 17.4.0
+        version: 17.4.0
     devDependencies:
+      '@blend-capital/blend-sdk':
+        specifier: 4.0.0
+        version: 4.0.0
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
@@ -139,8 +151,8 @@ importers:
   services/anchor-business:
     dependencies:
       '@stellar/stellar-sdk':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: 17.4.0
+        version: 17.4.0
       fastify:
         specifier: ^5
         version: 5.12.5
@@ -173,8 +185,8 @@ importers:
         specifier: ^11
         version: 11.3.0
       '@stellar/stellar-sdk':
-        specifier: ^17.2.1
-        version: 17.2.1
+        specifier: 17.4.0
+        version: 17.4.0
       fastify:
         specifier: ^5
         version: 5.12.5
@@ -282,6 +294,10 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@blend-capital/blend-sdk@4.0.0':
+    resolution: {integrity: sha512-G74XbRItqvZoePZCFKBfG2SJ66lqksEQ39yR+7g0WxFt0sQMs3fGcg/WYb26TXp+XH9c6awQq2Z1It6zDKJlmA==}
+    engines: {node: '>=22.12.0'}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -780,18 +796,13 @@ packages:
     resolution: {integrity: sha512-HBDNKnxr+ecdaEmbZ0mcKkirOF8tXXEbWSw34P3wT40Tn3g+u+cCH17xAWZymzscq8cojHB8340pR8QNVaD32w==}
     engines: {node: '>=22.0.0', pnpm: '>=10.0.0'}
 
-  '@stellar/stellar-sdk@17.0.1':
-    resolution: {integrity: sha512-fsHHbzJ14N5Ttq5Qpz4AX0ytmPSLCzcy4XC3uIgSQz0cBkEgv0Zb4KE6tWEd3nDQUk/1qP8ZX9cRonIaUXO3Sw==}
+  '@stellar/stellar-sdk@17.4.0':
+    resolution: {integrity: sha512-IX6gi62yWQ+6Oz56LsVEEeSViSOWJL3BkttftwVmVsu+62nLTWNVsCmTWEzwgNLT/q5HGP25OnlU+hhy2E4wwA==}
     engines: {node: '>=22.12.0'}
     hasBin: true
 
-  '@stellar/stellar-sdk@17.2.1':
-    resolution: {integrity: sha512-kIyfnZ2zCOqV8SUJcsk9buBOvhH1wsLU7KAzqAJyY7AgmD+KdvLTMpI1gcYdhGSakuDG5s6xSO4EN9HZTxpm8g==}
-    engines: {node: '>=22.12.0'}
-    hasBin: true
-
-  '@stellar/typescript-wallet-sdk@5.0.0':
-    resolution: {integrity: sha512-pCkV8CepZSfZcEOBLHzMcDb9bfjInjVRPhbcvM+kxFMRbMOcVcYzVaj4SNdYyakkB0jhXOeHu4yw6nGWmpe4Og==}
+  '@stellar/typescript-wallet-sdk@6.0.0':
+    resolution: {integrity: sha512-J011sgzehU6q+bKQdn528GWTh7PhxNzrvzQLpR7YCFt070AMVxJ6eol9i0AG5ZXFvT/pLLundmeK7/ZOMpy+oA==}
     engines: {node: '>=22.12.0'}
 
   '@types/babel__core@7.20.5':
@@ -905,9 +916,6 @@ packages:
 
   avvio@9.3.0:
     resolution: {integrity: sha512-g2tQ7LE7oOSqDfwEm3M+ZCMTJc7KiZCdJ4UwyZJb5ckTKyYu50OYmvv0mCFXPuYXoM4zkSt8zM9XQ9KCvxA74A==}
-
-  axios@1.18.0:
-    resolution: {integrity: sha512-E32NzpYKp++W7XRe52rHiXV2ehxmh3wbdgO7MHeFM+vqxLBYHzt0ElkiImtOBxtOmyp0yoC8C6uESVV84Y2/hw==}
 
   axios@1.20.0:
     resolution: {integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==}
@@ -1803,6 +1811,14 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@blend-capital/blend-sdk@4.0.0':
+    dependencies:
+      '@stellar/stellar-sdk': 17.4.0
+      follow-redirects: 1.16.1
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
 
@@ -2098,25 +2114,7 @@ snapshots:
 
   '@stellar/js-xdr@5.0.0': {}
 
-  '@stellar/stellar-sdk@17.0.1':
-    dependencies:
-      '@exodus/bytes': 1.16.0(@noble/hashes@2.4.0)
-      '@noble/ed25519': 3.2.0
-      '@noble/hashes': 2.4.0
-      '@stellar/js-xdr': 5.0.0
-      '@types/json-schema': 7.0.15
-      axios: 1.18.0
-      bignumber.js: 11.1.5
-      commander: 14.0.3
-      eventsource: 4.1.1
-      feaxios: 0.0.23
-      smol-toml: 1.9.0
-      uint8array-extras: 1.6.0
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-
-  '@stellar/stellar-sdk@17.2.1':
+  '@stellar/stellar-sdk@17.4.0':
     dependencies:
       '@exodus/bytes': 1.16.0(@noble/hashes@2.4.0)
       '@noble/ed25519': 3.2.0
@@ -2134,11 +2132,11 @@ snapshots:
       - debug
       - supports-color
 
-  '@stellar/typescript-wallet-sdk@5.0.0':
+  '@stellar/typescript-wallet-sdk@6.0.0':
     dependencies:
       '@stablelib/base64': 2.0.1
       '@stablelib/utf8': 2.1.0
-      '@stellar/stellar-sdk': 17.0.1
+      '@stellar/stellar-sdk': 17.4.0
       axios: 1.20.0
       https-browserify: 1.0.0
       jws: 4.0.1
@@ -2295,16 +2293,6 @@ snapshots:
     dependencies:
       '@fastify/error': 4.2.0
       fastq: 1.20.3
-
-  axios@1.18.0:
-    dependencies:
-      follow-redirects: 1.16.1
-      form-data: 4.0.6
-      https-proxy-agent: 5.0.1
-      proxy-from-env: 2.1.0
-    transitivePeerDependencies:
-      - debug
-      - supports-color
 
   axios@1.20.0:
     dependencies:

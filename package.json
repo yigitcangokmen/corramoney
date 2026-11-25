@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm test:scripts",
+    "test:scripts": "tsx --test scripts/lib/*.test.ts",
     "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
     "seed-testnet": "tsx scripts/seed-testnet.ts",
     "onchain-check": "tsx scripts/onchain-check.ts",
@@ -15,13 +16,37 @@
     "no-server-side-signing": "tsx scripts/no-server-side-signing.ts",
     "demo-recipient": "tsx scripts/demo-recipient.ts",
     "anchor-check": "tsx scripts/anchor-check.ts",
-    "publish-app": "pnpm --filter @corra/web build:prod && cp -R apps/web/dist/. app/"
+    "anchor-trustline": "tsx scripts/anchor-trustline.ts",
+    "balance-check": "tsx scripts/balance-check.ts",
+    "deploy-pool": "tsx scripts/deploy-pool.ts",
+    "pool-check": "tsx scripts/pool-check.ts",
+    "pool-ttl": "tsx scripts/pool-ttl.ts",
+    "create-channels": "tsx scripts/create-channels.ts",
+    "concurrent-setups": "tsx scripts/concurrent-setups.ts",
+    "archive-tx": "tsx scripts/archive-tx.ts",
+    "evidence-index": "tsx scripts/evidence-index.ts",
+    "evidence-app-run": "tsx scripts/evidence-app-run.ts",
+    "redeploy-after-reset": "tsx scripts/redeploy-after-reset.ts",
+    "release-check": "tsx scripts/release-check.ts",
+    "secret-scan": "tsx scripts/secret-scan.ts",
+    "ops-check": "tsx scripts/ops-check.ts",
+    "publish-app": "pnpm --filter @corra/web build:prod && cp -R apps/web/dist/. app/",
+    "local:up": "bash scripts/local-stack.sh up",
+    "local:down": "bash scripts/local-stack.sh down",
+    "local:status": "bash scripts/local-stack.sh status",
+    "local:check": "bash scripts/local-stack.sh check"
   },
   "devDependencies": {
-    "@stellar/stellar-sdk": "^17.2.1",
-    "@stellar/typescript-wallet-sdk": "^5",
+    "@blend-capital/blend-sdk": "4.0.0",
+    "@stellar/stellar-sdk": "17.4.0",
+    "@stellar/typescript-wallet-sdk": "6.0.0",
     "@types/node": "^22",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@stellar/stellar-sdk": "17.4.0"
+    }
   }
 }
