@@ -81,5 +81,5 @@ if ! "${SSH[@]}" "cd $DIR && docker compose -f deploy/docker-compose.yml run --r
   exit 1
 fi
 
-# 5. Build and start.
-"${SSH[@]}" "cd $DIR && docker compose -f deploy/docker-compose.yml up -d --build --remove-orphans && docker compose -f deploy/docker-compose.yml ps"
+# 5. Build and start. Caddy and the platform read mounted config files that `up` does not watch, so restart them.
+"${SSH[@]}" "cd $DIR && docker compose -f deploy/docker-compose.yml up -d --build --remove-orphans && docker compose -f deploy/docker-compose.yml restart caddy platform && docker compose -f deploy/docker-compose.yml ps"
