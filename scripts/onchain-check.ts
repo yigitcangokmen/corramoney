@@ -2,10 +2,15 @@
  * Drives the Deliverable 1 mechanics end to end on testnet, with keypairs standing in for
  * Freighter. Prints every transaction hash so the run is verifiable on stellar.expert.
  *
- *   1. sponsored setup: sender and recipient created with 0 XLM, trustlines sponsored (CAP-33)
- *   2. sender signs the strict-receive payment BEFORE holding any TESTMXN
+ *   1. sponsored setup: sender and recipient created with 0 XLM, trustlines sponsored (CAP-33);
+ *      the sender's payment account (0 XLM, master weight 0, the sender its only signer) in its
+ *      own sponsored transaction, signed by a throwaway key
+ *   2. sender signs the strict-receive payment BEFORE holding any TESTMXN; the payment account
+ *      is the transaction source, the sender the operation source and only signer
  *   3. simulated cash-in credits the sender, confirmed from chain state
- *   4. the signed blob is fee-bumped (CAP-15) and submitted: recipient credited
+ *   4. the signed blob is fee-bumped (CAP-15) and submitted: recipient credited; on chain the
+ *      transaction source is the payment account, the operation source the sender, both hold 0 XLM,
+ *      and a second sender-signed blob at the same payment-account sequence is refused (tx_bad_seq)
  *   5. failure paths: sendMax too low -> cap exceeded; maxTime passed -> expired
  *
  * Usage: pnpm onchain-check
@@ -15,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import { fiatAsset, fromDecimal, TESTNET, toDecimal, withSlippage, type Money } from '../packages/shared/src';
 import {
   assertBoundPayment,
+  buildPaymentAccountSetup,
   buildSponsoredSetup,
   buildStrictReceive,
   createHorizonGateway,
@@ -57,6 +63,22 @@ async function sponsoredSetup(user: S.Keypair, trust: typeof MXN) {
   return (await submitXdr(bySponsor.toXDR())).hash;
 }
 
+/** The sender's payment account, as the app makes it: a throwaway key signs its creation and ends at weight 0. */
+async function paymentAccountSetup(sender: S.Keypair) {
+  const z = S.Keypair.random();
+  const sp = await horizon.loadAccount(sponsor.publicKey);
+  const tx = buildPaymentAccountSetup({
+    networkPassphrase: NP, sponsor: sponsor.publicKey, sponsorSequence: sp.sequence, sender: sender.publicKey(), paymentAccount: z.publicKey(), now: now(),
+  });
+  const bySponsor = S.TransactionBuilder.fromXDR(sponsor.signSetup(tx.toXDR()), NP) as S.Transaction;
+  bySponsor.sign(z); // the browser's throwaway key in the app
+  return { paymentAccount: z.publicKey(), hash: (await submitXdr(bySponsor.toXDR())).hash };
+}
+
+const check = (ok: boolean, what: string) => {
+  if (!ok) throw new Error(`check failed: ${what}`);
+};
+
 async function cashIn(to: string, amount: Money) {
   const a = await horizon.loadAccount(anchor.publicKey());
   const tx = new S.TransactionBuilder(a, { fee: '1000', networkPassphrase: NP })
@@ -66,10 +88,10 @@ async function cashIn(to: string, amount: Money) {
   return (await submitXdr(tx.toXDR())).hash;
 }
 
-async function signPayment(sender: S.Keypair, recipient: string, dest: Money, sendMax: Money, path: typeof MXN[], ttlNow = now(), ttlSec?: number) {
-  const acct = await horizon.loadAccount(sender.publicKey());
+async function signPayment(sender: S.Keypair, z: string, recipient: string, dest: Money, sendMax: Money, path: typeof MXN[], ttlNow = now(), ttlSec?: number,
+  paymentSequence?: string) {
   const tx = buildStrictReceive({
-    networkPassphrase: NP, sender: sender.publicKey(), senderSequence: acct.sequence,
+    networkPassphrase: NP, sender: sender.publicKey(), paymentAccount: z, paymentSequence: paymentSequence ?? (await horizon.loadAccount(z)).sequence,
     recipient, dest, sendMax, path, now: ttlNow, ttlSec,
   });
   tx.sign(sender); // Freighter in the app
@@ -88,9 +110,12 @@ async function main() {
   console.log(`sender    ${sender.publicKey()}\nrecipient ${recipient.publicKey()}\n`);
 
   console.log('1. sponsored setup (accounts created with 0 XLM)');
+  const pa = await paymentAccountSetup(sender);
+  const z = pa.paymentAccount;
+  console.log(`   payment   ${link(pa.hash)}\n             ${z} (master weight 0, sole signer = the sender)`);
   console.log(`   sender    ${link(await sponsoredSetup(sender, MXN))}`);
   console.log(`   recipient ${link(await sponsoredSetup(recipient, PHP))}`);
-  console.log(`   sender XLM balance: ${await balance(sender.publicKey(), 'XLM')}`);
+  console.log(`   sender XLM balance: ${await balance(sender.publicKey(), 'XLM')}, payment account XLM balance: ${await balance(z, 'XLM')}`);
 
   console.log('\n2. quote + sign before cash-in');
   const dest = fromDecimal(PHP, '1000');
@@ -98,8 +123,9 @@ async function main() {
   if (!route) throw new Error('no route');
   const sendMax = withSlippage(route.source, 150);
   console.log(`   route TESTMXN -> ${route.path.map((p) => p.code).join(' -> ')} -> TESTPHP, cost ${toDecimal(route.source)}, sendMax ${toDecimal(sendMax)}`);
-  const signed = await signPayment(sender, recipient.publicKey(), dest, sendMax, route.path);
-  const bound = assertBoundPayment(signed, { sender: sender.publicKey(), recipient: recipient.publicKey(), dest, sendMax, path: route.path }, NP, now());
+  const zSequence = (await horizon.loadAccount(z)).sequence;
+  const signed = await signPayment(sender, z, recipient.publicKey(), dest, sendMax, route.path, now(), undefined, zSequence);
+  const bound = assertBoundPayment(signed, { sender: sender.publicKey(), paymentAccount: z, recipient: recipient.publicKey(), dest, sendMax, path: route.path }, NP, now());
   console.log(`   signed, bound check passed. sender TESTMXN balance now: ${await balance(sender.publicKey(), 'TESTMXN')}`);
   console.log(`   minSeqNum ${bound.minSequence}, seq ${bound.sequence}, maxTime ${new Date(bound.maxTime * 1000).toISOString()}`);
 
@@ -115,10 +141,29 @@ async function main() {
   if (out.kind !== 'success') throw new Error(`payment failed: ${JSON.stringify(out)}`);
   console.log(`   ${link(out.hash)}`);
   console.log(`   recipient TESTPHP: ${await balance(recipient.publicKey(), 'TESTPHP')}   sender XLM: ${await balance(sender.publicKey(), 'XLM')}`);
+  // (1) the shape on chain: transaction source = the payment account, operation source = the sender
+  const landed: any = await horizon.transactions().transaction(bound.hash).call();
+  const op: any = (await horizon.operations().forTransaction(bound.hash).call()).records[0];
+  check(landed.source_account === z, `inner transaction source ${landed.source_account}, expected the payment account ${z}`);
+  check(op.source_account === sender.publicKey(), `operation source ${op.source_account}, expected the sender`);
+  check(landed.fee_account === sponsor.publicKey, `fee account ${landed.fee_account}, expected the sponsor`);
+  console.log(`   on chain: transaction source = payment account, operation source = sender, fee paid by ${landed.fee_account} (sponsor)`);
+  // (2) the sender and its payment account both hold 0 XLM after paying
+  const [senderXlm, zXlm] = [await balance(sender.publicKey(), 'XLM'), await balance(z, 'XLM')];
+  check(Number(senderXlm) === 0 && Number(zXlm) === 0, `XLM after paying: sender ${senderXlm}, payment account ${zXlm}`);
+  console.log(`   sender XLM ${senderXlm}, payment account XLM ${zXlm}`);
+  // (3) J4: a second sender-signed blob at the same payment-account sequence can never land too
+  await cashIn(sender.publicKey(), sendMax);
+  const twin = await signPayment(sender, z, recipient.publicKey(), dest, sendMax, route.path, now(), 25 * 60, zSequence);
+  check(twin !== signed, 'the twin is another blob');
+  const dup = await gateway.submitPayment(twin);
+  const dupCode = (dup as any).codes?.inner_transaction ?? (dup as any).codes?.transaction;
+  console.log(`   a second blob at the same sequence: ${dup.kind} ${JSON.stringify((dup as any).codes)}`);
+  check(dup.kind === 'bad_seq' && dupCode === 'tx_bad_seq', `expected tx_bad_seq, got ${dup.kind} ${JSON.stringify((dup as any).codes)}`);
 
   console.log('\n5a. cap exceeded: sendMax below the real cost');
   const lowCap = fromDecimal(MXN, toDecimal({ asset: MXN, raw: route.source.raw / 2n }));
-  const capBlob = await signPayment(sender, recipient.publicKey(), dest, lowCap, route.path);
+  const capBlob = await signPayment(sender, z, recipient.publicKey(), dest, lowCap, route.path);
   await cashIn(sender.publicKey(), lowCap);
   const cap = await gateway.submitPayment(capBlob);
   console.log(`   outcome: ${cap.kind} ${'hash' in cap ? link(cap.hash) : ''}`);
@@ -127,7 +172,7 @@ async function main() {
   console.log(`   recipient TESTPHP unchanged: ${await balance(recipient.publicKey(), 'TESTPHP')}`);
 
   console.log('\n5b. expired: maxTime already passed');
-  const oldBlob = await signPayment(sender, recipient.publicKey(), dest, sendMax, route.path, now() - 120, 60);
+  const oldBlob = await signPayment(sender, z, recipient.publicKey(), dest, sendMax, route.path, now() - 120, 60);
   const exp = await gateway.submitPayment(oldBlob);
   console.log(`   outcome: ${exp.kind}  codes: ${JSON.stringify((exp as any).codes)}`);
   if (exp.kind !== 'expired') throw new Error('expected expired');

@@ -3,16 +3,24 @@
  * reviewer can send without setting up a second wallet. Its secret is discarded: it only
  * ever receives. Writes its address into packages/shared/src/testnet.ts.
  *
- * Usage: pnpm demo-recipient
+ * Usage: pnpm demo-recipient [--if-missing]
+ *   --if-missing: when TESTNET.demoRecipient exists and trusts every destination asset, does nothing
+ *   (a testnet reset removes it: then a new one is made and testnet.ts rewritten).
  */
 import * as S from '@stellar/stellar-sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { DEST_FIATS, FIAT } from '../packages/shared/src/corridors';
 import { TESTNET } from '../packages/shared/src/testnet';
+import { missingDestTrust } from './lib/testnet-state';
 
 const TESTNET_TS = 'packages/shared/src/testnet.ts';
 
 async function main() {
+  const current = (TESTNET as { demoRecipient?: string }).demoRecipient;
+  if (process.argv.includes('--if-missing') && current && !(await missingDestTrust(current, TESTNET.corridorIssuer)).length) {
+    console.log(`demo recipient present: ${current}`);
+    return;
+  }
   const horizon = new S.Horizon.Server(TESTNET.horizonUrl);
   const kp = S.Keypair.random();
   const r = await fetch(`https://friendbot.stellar.org?addr=${kp.publicKey()}`);

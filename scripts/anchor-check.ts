@@ -5,6 +5,7 @@
  *   2. SEP-10 against the anchor with Corra's client_domain co-signature
  *   3. SEP-24 deposit of TESTMXN, simulated SPEI transfer at the anchor's business server
  *   4. TESTMXN lands in the sender's account; the anchor posts a signed callback to the orchestrator
+ *   5. SEP-24 info offers TESTPHP withdraw (and no TESTMXN withdraw); the distribution account trusts TESTPHP
  *
  * Needs the orchestrator (:8787) and the anchor stack (infra/anchor) running.
  *   pnpm anchor-check
@@ -77,6 +78,15 @@ async function main() {
   const bal = acct.balances.find((b: any) => b.asset_code === 'TESTMXN' && b.asset_issuer === TESTNET.corridorIssuer);
   console.log(`   sender TESTMXN ${bal?.balance}, XLM ${acct.balances.find((b: any) => b.asset_type === 'native')?.balance}`);
   if (!bal || Number(bal.balance) < Number(AMOUNT)) throw new Error('TESTMXN did not arrive');
+
+  const info: any = await sep24.getServicesInfo();
+  if (info?.withdraw?.TESTPHP?.enabled !== true) throw new Error(`SEP-24 info offers no TESTPHP withdraw: ${JSON.stringify(info?.withdraw)}`);
+  if (info?.withdraw?.TESTMXN) throw new Error('SEP-24 info offers a TESTMXN withdraw; it must be deposit only');
+  const dist = await horizon.loadAccount(TESTNET.anchorDistribution);
+  if (!dist.balances.some((b: any) => b.asset_code === 'TESTPHP' && b.asset_issuer === TESTNET.corridorIssuer)) {
+    throw new Error('the anchor distribution account has no TESTPHP trustline (pnpm anchor-trustline)');
+  }
+  console.log('5. SEP-24 info: TESTPHP withdraw enabled, TESTMXN deposit only; distribution trusts TESTPHP');
   console.log(`\nCASH-IN OK. Signed callbacks for ${dep.id} are logged by the orchestrator at POST /callbacks/sep24.`);
 }
 

@@ -13,7 +13,7 @@ on:
 jobs:
   quickstart:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -39,9 +39,16 @@ jobs:
           for i in $(seq 1 120); do curl -sf http://localhost:8080/.well-known/stellar.toml > /dev/null && exit 0; sleep 2; done
           docker compose -f infra/anchor/docker-compose.yml logs platform | tail -80; exit 1
 
+      - name: Channel accounts (five, friendbot)
+        run: pnpm create-channels
+
+      # CI only: the runner's fresh seed has its own TESTMXN issuer and a new pool admin; never run this locally.
+      - name: Throwaway Blend pool for this run's TESTMXN
+        run: pnpm deploy-pool --redeploy --strand-deposits
+
       - name: Start the orchestrator
         run: |
-          ANCHOR_HOME_DOMAIN=http://localhost:8080 nohup pnpm --filter @corra/orchestrator start > orchestrator.log 2>&1 &
+          CORRA_LOCAL_SETUP_LIMITS=1 ANCHOR_HOME_DOMAIN=http://localhost:8080 nohup pnpm --filter @corra/orchestrator start > orchestrator.log 2>&1 &
           for i in $(seq 1 60); do curl -sf http://localhost:8787/health && exit 0; sleep 1; done
           cat orchestrator.log; exit 1
 
@@ -50,6 +57,18 @@ jobs:
 
       - name: Drive one payment to CREDITED through the API and the anchor
         run: pnpm drive-payment
+
+      - name: Recipient cash-out through TESTPHP (D3)
+        run: pnpm drive-payment --cash-out
+
+      - name: Five sends from a balance (D1)
+        run: DEPOSIT=direct pnpm balance-check
+
+      - name: Pool supply and withdraw, fee-bumped (D2)
+        run: pnpm pool-check
+
+      - name: Three sponsored setups in one ledger, each from a different channel account
+        run: pnpm concurrent-setups
 
       - name: Logs
         if: always()

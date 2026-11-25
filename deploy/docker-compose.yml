@@ -17,7 +17,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    depends_on: [orchestrator, platform, anchor-business]
+    depends_on: [orchestrator, platform, anchor-business, goatcounter]
     restart: unless-stopped
 
   # ---- Corra
@@ -26,6 +26,10 @@ services:
       context: ..
       dockerfile: services/orchestrator/Dockerfile
     env_file: ./orchestrator.env
+    # SIGTERM reaches node through an init (the image's CMD execs node itself); the drain takes up to
+    # 15 s for the HTTP server and 15 s for the reconcile passes, so Docker waits 40 s before SIGKILL.
+    init: true
+    stop_grace_period: 40s
     depends_on:
       corra-db:
         condition: service_healthy
@@ -44,6 +48,13 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
+    restart: unless-stopped
+
+  # ---- Usage counts (stats.corra.money): cookie-less, served behind Caddy, which sets X-Forwarded-For
+  goatcounter:
+    image: arp242/goatcounter:2.7.0
+    volumes:
+      - goatcounter-data:/home/goatcounter/goatcounter-data
     restart: unless-stopped
 
   # ---- The test anchor (the anchor's side, not Corra's)
@@ -111,3 +122,4 @@ volumes:
   corra-pgdata:
   anchor-pgdata:
   kafka-data:
+  goatcounter-data:

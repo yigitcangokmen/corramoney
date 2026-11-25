@@ -14,6 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - name: One @stellar/stellar-sdk version in the lockfile
+        run: |
+          v=$(grep -oE "^  '@stellar/stellar-sdk@[^']+'" pnpm-lock.yaml | sort -u)
+          [ "$v" = "  '@stellar/stellar-sdk@17.4.0'" ] || { echo "stellar-sdk versions in the lockfile: $v"; exit 1; }
       - run: pnpm typecheck
 
   test:
@@ -34,6 +38,7 @@ jobs:
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r test
+      - run: pnpm test:scripts
 
   no-server-side-signing:
     runs-on: ubuntu-latest
@@ -57,8 +62,180 @@ jobs:
           echo "$out"
           echo "$out" | grep -q 'bad.ts:2 loads a key' || { echo "the scan failed, but not on the key load"; exit 1; }
           echo "$out" | grep -q 'bad.ts:3 signs outside the allowed modules' || { echo "the scan missed the signature"; exit 1; }
+      - name: Prove the scan fails on Soroban auth signing (fixture 2)
+        run: |
+          mkdir -p "$RUNNER_TEMP/fixture2"
+          printf '%s\n' \
+            "import * as S from '@stellar/stellar-sdk';" \
+            "import { authorizeEntry } from '@stellar/stellar-sdk';" \
+            "const k = S.Keypair.fromSecret(process.env.USER_SECRET!);" \
+            "export const a = (e: S.xdr.SorobanAuthorizationEntry) => S.authorizeEntry(e, k, 1, 'np');" \
+            "export const b = (e: S.xdr.SorobanAuthorizationEntry) => authorizeEntry(e, k, 1, 'np');" \
+            "import { authorizeEntry as ae } from '@stellar/stellar-sdk';" \
+            "export const c = (e: S.xdr.SorobanAuthorizationEntry) => ae(e, k, 1, 'np');" \
+            "export const d = (h: Buffer) => k['sign'](h);" \
+            "const f = S.authorizeEntry;" \
+            "export const g = (e: S.xdr.SorobanAuthorizationEntry) => f(e, k, 1, 'np');" \
+            "const { authorizeEntry: ae2, Keypair: K } = S;" \
+            "const k2 = K.fromSecret(process.env.USER_SECRET!);" \
+            "export const h = (e: S.xdr.SorobanAuthorizationEntry) => ae2(e, k2, 1, 'np');" \
+            "const f2 = authorizeEntry;" \
+            "export const i = (e: S.xdr.SorobanAuthorizationEntry) => f2(e, k, 1, 'np');" \
+            "const KP = S['Keypair'];" \
+            "export const k3 = KP.fromSecret(process.env.USER_SECRET!);" > "$RUNNER_TEMP/fixture2/auth.ts"
+          out=$(pnpm exec tsx scripts/no-server-side-signing.ts "$RUNNER_TEMP/fixture2" 2>&1) && {
+            echo "the scan passed a module that signs Soroban auth with a loaded key"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -q 'auth.ts:3 loads a key' || { echo "missed the key load"; exit 1; }
+          echo "$out" | grep -q 'auth.ts:4 signs outside the allowed modules: .authorizeEntry()' || { echo "missed S.authorizeEntry"; exit 1; }
+          echo "$out" | grep -q 'auth.ts:5 signs outside the allowed modules: authorizeEntry()' || { echo "missed the named import"; exit 1; }
+          echo "$out" | grep -q 'auth.ts:7 signs outside the allowed modules: ae() (alias of authorizeEntry)' || { echo "missed the aliased import"; exit 1; }
+          echo "$out" | grep -q "auth.ts:8 signs outside the allowed modules: \['sign'\]()" || { echo "missed the element-access call"; exit 1; }
+          echo "$out" | grep -qF 'auth.ts:9 signs outside the allowed modules: .authorizeEntry taken as a value' || { echo "missed the variable alias"; exit 1; }
+          echo "$out" | grep -qF 'auth.ts:11 signs outside the allowed modules: { authorizeEntry } destructured' || { echo "missed the destructured alias"; exit 1; }
+          echo "$out" | grep -qF 'auth.ts:12 loads a key: K.fromSecret()' || { echo "missed the destructured Keypair"; exit 1; }
+          echo "$out" | grep -qF 'auth.ts:14 signs outside the allowed modules: authorizeEntry taken as a value' || { echo "missed the named import taken as a value"; exit 1; }
+          echo "$out" | grep -qF 'auth.ts:17 loads a key: KP.fromSecret()' || { echo "missed the element-access Keypair alias"; exit 1; }
+      - name: Prove the scan fails on channel keys and raw signing (fixture 3)
+        run: |
+          mkdir -p "$RUNNER_TEMP/fixture3"
+          printf '%s\n' \
+            "import * as S from '@stellar/stellar-sdk';" \
+            "const secrets = process.env.CHANNEL_SECRETS!.split(',');" \
+            "const k = S.Keypair.fromSecret(secrets[0]);" \
+            "export const relay = (tx: S.Transaction) => { tx.sign(k); return tx; };" \
+            "export const raw = S.StrKey.decodeEd25519SecretSeed(secrets[1]);" \
+            "export const k2 = new S.Keypair({ type: 'ed25519', secretKey: raw });" \
+            "import { sign as edSign } from 'node:crypto';" \
+            "import nacl from 'tweetnacl';" \
+            "export const s = (m: Buffer) => [edSign, nacl, m];" \
+            "export { createSign } from 'node:crypto';" \
+            "export const d = async () => (await import('tweetnacl')).default;" \
+            "import { createRequire } from 'node:module';" \
+            "const req = createRequire(import.meta.url);" \
+            "export const n = req('@noble/ed25519');" \
+            "export const l = require('libsodium-wrappers-sumo');" \
+            "import ed from '@stablelib/ed25519';" \
+            "export const c = (d: any) => createChannels(process.env.X!.split(','), d);" \
+            "export const p = async () => (await import('node:crypto')).createPrivateKey('k');" \
+            "export { ed };" > "$RUNNER_TEMP/fixture3/channel.ts"
+          printf '%s\n' \
+            "export const c = process.env.CHANNEL_SECRETS;" \
+            "export const f = process.env.FEE_SPONSOR_SECRET;" > "$RUNNER_TEMP/fixture3/x-config.ts"
+          out=$(pnpm exec tsx scripts/no-server-side-signing.ts "$RUNNER_TEMP/fixture3" 2>&1) && {
+            echo "the scan passed a module that reads the channel secrets and signs with them"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -qF 'channel.ts touches the channel secrets' || { echo "missed the channel secret flow"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:3 loads a key' || { echo "missed the key load"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:4 signs outside the allowed modules' || { echo "missed the signature"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:5 loads a key: S.StrKey.decodeEd25519SecretSeed()' || { echo "missed the raw seed decode"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:6 loads a key: new S.Keypair()' || { echo "missed new Keypair"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:7 imports a raw signing primitive: sign from node:crypto' || { echo "missed node:crypto sign"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:8 imports a raw signing library: tweetnacl' || { echo "missed tweetnacl"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:10 imports a raw signing primitive: createSign from node:crypto' || { echo "missed the node:crypto re-export"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:11 imports a raw signing library: tweetnacl' || { echo "missed import('tweetnacl')"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:14 imports a raw signing library: @noble/ed25519' || { echo "missed createRequire()"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:15 imports a raw signing library: libsodium-wrappers-sumo' || { echo "missed require() of a look-alike"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:16 imports a raw signing library: @stablelib/ed25519' || { echo "missed @stablelib/ed25519"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:17 uses createChannels()' || { echo "missed createChannels outside index.ts"; exit 1; }
+          echo "$out" | grep -qF 'channel.ts:18 imports a raw signing primitive: createPrivateKey from node:crypto' || { echo "missed import('node:crypto')"; exit 1; }
+          echo "$out" | grep -qF 'x-config.ts touches the channel secrets' || { echo "exempted a non-orchestrator config.ts (channel)"; exit 1; }
+          echo "$out" | grep -qF 'x-config.ts touches the fee-sponsor secret' || { echo "exempted a non-orchestrator config.ts (sponsor)"; exit 1; }
+      - name: Prove the scan fails on key loaders taken as values and namespace crypto (fixture 4)
+        run: |
+          mkdir -p "$RUNNER_TEMP/fixture4"
+          printf '%s\n' \
+            "import * as S from '@stellar/stellar-sdk';" \
+            "import * as c from 'node:crypto';" \
+            "const { env } = process;" \
+            "export const ks = env['CHANNEL' + '_SECRETS']!.split(',').map(S.Keypair.fromSecret);" \
+            "const load = S.Keypair.fromSecret;" \
+            "export const k1 = load('x');" \
+            "export const k2 = S.Keypair.fromSecret.call(S.Keypair, 'x');" \
+            "export const p = c.createPrivateKey;" \
+            "const { fromSecret } = S.Keypair;" \
+            "export const k3 = fromSecret('x');" \
+            "export const k4 = S.Keypair['fromSecret']('x');" \
+            "export const seed = [S.StrKey.decodeEd25519SecretSeed].map((f) => f('x'));" \
+            "import crypto from 'crypto';" > "$RUNNER_TEMP/fixture4/bypass.ts"
+          out=$(pnpm exec tsx scripts/no-server-side-signing.ts "$RUNNER_TEMP/fixture4" 2>&1) && {
+            echo "the scan passed a module that loads keys through loaders taken as values"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -qF 'bypass.ts:2 imports a raw signing primitive: * from node:crypto' || { echo "missed the namespace crypto import"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:4 reads the environment by a computed name' || { echo "missed the computed env name"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:4 loads a key: S.Keypair.fromSecret taken as a value' || { echo "missed .map(S.Keypair.fromSecret)"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:5 loads a key: S.Keypair.fromSecret taken as a value' || { echo "missed the variable alias"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:7 loads a key: S.Keypair.fromSecret taken as a value' || { echo "missed .call"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:8 uses a raw signing primitive: c.createPrivateKey' || { echo "missed the namespace crypto member"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:9 loads a key: { fromSecret } destructured from S.Keypair' || { echo "missed the destructured fromSecret"; exit 1; }
+          echo "$out" | grep -qF "bypass.ts:11 loads a key: S.Keypair['fromSecret']" || { echo "missed the element-access loader"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:12 loads a key: S.StrKey.decodeEd25519SecretSeed taken as a value' || { echo "missed the seed decoder as a value"; exit 1; }
+          echo "$out" | grep -qF 'bypass.ts:13 imports a raw signing primitive: * from crypto' || { echo "missed the default crypto import"; exit 1; }
+      - name: Prove the scan fails on secret, signer and factory hand-offs (fixture 5)
+        run: |
+          f="$RUNNER_TEMP/fixture5"
+          mkdir -p "$f/services/orchestrator/src"
+          printf '%s\n' \
+            "import { createChannels, createSponsor } from '@corra/stellar';" \
+            "import { loadConfig } from './config';" \
+            "const cfg = loadConfig();" \
+            "export const s = createSponsor(cfg.feeSponsorSecret, 'p', {} as any);" \
+            "export const c = createChannels(cfg.channelSecrets, {} as any);" \
+            "const { channelSecrets: cs, feeSponsorSecret: fs } = cfg;" \
+            "export const leak = [cs, fs, cfg['channelSecrets'], cfg['feeSponsorSecret']];" \
+            "export const all = Object.values(cfg);" > "$f/services/orchestrator/src/index.ts"
+          printf '%s\n' \
+            "import type { Channels } from '@corra/stellar';" \
+            "export const relay = (c: Channels, xdr: string, ch: string) => c.signSetup(xdr, ch, 0);" \
+            "export const grab = (c: any) => c.acquire(1, Date.now());" \
+            "export const via = (ch: any, k: string) => ch[k]();" \
+            "export const paren = (ch: any, k: string) => (ch[k])();" \
+            "export const comma = (ch: any, k: string) => (0, ch[k])();" \
+            "export const viaCall = (ch: any, k: string) => ch[k].call(ch);" \
+            "export const viaApply = (ch: any, k: string) => ch[k].apply(ch, []);" \
+            "export const viaBind = (ch: any, k: string) => ch[k].bind(ch);" \
+            "export const viaReflect = (ch: any, k: string) => Reflect.apply(ch[k], ch, []);" \
+            "export const viaCallCall = (K: any, m: string, s: string) => Function.prototype.call.call(K[m], K, s);" \
+            "export const viaApplyCall = (K: any, m: string, s: string) => Function.prototype.apply.call(K[m], K, [s]);" \
+            "export const viaNew = (S: any, c: string, raw: Buffer) => new S[c](raw);" \
+            "export const viaConstruct = (S: any, c: string, raw: Buffer) => Reflect.construct(S[c], [raw]);" > "$f/relay.ts"
+          printf '%s\n' \
+            "import { sign } from '@stellar/stellar-sdk';" \
+            "export const s = (d: Buffer, k: Buffer) => sign(d, k);" \
+            "export { Keypair as KP, sign as edSign } from '@stellar/stellar-sdk';" \
+            "export { createChannels as cc } from '@corra/stellar';" > "$f/reexport.ts"
+          printf '%s\n' \
+            "import { KP, edSign, cc } from './reexport';" \
+            "const k = KP.fromSecret(process.env.X!);" \
+            "export const t = (d: Buffer) => edSign(d, k.rawSecretKey());" \
+            "export const ch = cc([process.env.X!], {} as any);" > "$f/use.ts"
+          out=$(pnpm exec tsx scripts/no-server-side-signing.ts "$f" 2>&1) && {
+            echo "the scan passed modules that hand off secrets, signers and factories"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -qF 'index.ts:6 names the channel secrets outside createChannels(cfg.channelSecrets)' || { echo "missed the destructured channel secrets"; exit 1; }
+          echo "$out" | grep -qF 'index.ts:6 names the fee-sponsor secret outside createSponsor(cfg.feeSponsorSecret)' || { echo "missed the destructured sponsor secret"; exit 1; }
+          echo "$out" | grep -qF 'index.ts:7 names the channel secrets in a string' || { echo "missed cfg['channelSecrets']"; exit 1; }
+          echo "$out" | grep -qF 'index.ts:7 names the fee-sponsor secret in a string' || { echo "missed cfg['feeSponsorSecret']"; exit 1; }
+          echo "$out" | grep -qF 'index.ts:8 takes cfg as a whole' || { echo "missed Object.values(cfg)"; exit 1; }
+          echo "$out" | grep -qF 'relay.ts:1 references the Channels signer' || { echo "missed the Channels import"; exit 1; }
+          echo "$out" | grep -qF 'relay.ts:2 uses .signSetup outside services/orchestrator/src/setup.ts' || { echo "missed c.signSetup from another module"; exit 1; }
+          echo "$out" | grep -qF 'relay.ts:3 uses .acquire outside services/orchestrator/src/setup.ts' || { echo "missed c.acquire from another module"; exit 1; }
+          echo "$out" | grep -qF 'relay.ts:4 a call through a computed property can hide a signer' || { echo "missed ch[k]()"; exit 1; }
+          for l in 5:'(ch[k])()' 6:'(0, ch[k])()' 7:'ch[k].call()' 8:'ch[k].apply()' 9:'ch[k].bind()' 10:'Reflect.apply(ch[k])' \
+            11:'Function.prototype.call.call(K[m])' 12:'Function.prototype.apply.call(K[m])' 13:'new S[c]()' 14:'Reflect.construct(S[c])'; do
+            echo "$out" | grep -qF "relay.ts:${l%%:*} a call through a computed property can hide a signer" || { echo "missed ${l#*:}"; exit 1; }
+          done
+          echo "$out" | grep -qF 'reexport.ts:1 imports a raw signing primitive: sign from @stellar/stellar-sdk' || { echo "missed the named sign import"; exit 1; }
+          echo "$out" | grep -qF 'reexport.ts:2 signs outside the allowed modules: sign()' || { echo "missed the bare sign() call"; exit 1; }
+          echo "$out" | grep -qF 'reexport.ts:3 re-exports Keypair from @stellar/stellar-sdk' || { echo "missed the Keypair re-export"; exit 1; }
+          echo "$out" | grep -qF 'reexport.ts:3 re-exports a raw signing primitive: sign from @stellar/stellar-sdk' || { echo "missed the sign re-export"; exit 1; }
+          echo "$out" | grep -qF 'reexport.ts:4 uses createChannels()' || { echo "missed the renamed factory re-export"; exit 1; }
       - name: Sponsor key refusals (fee-bump and sponsorship scope)
         run: pnpm --filter @corra/stellar test
+      - name: Sponsor pool scope refusals
+        run: pnpm --filter @corra/stellar exec vitest run src/pool.test.ts
+      - name: Channel key refusals (only a sponsored setup that creates an account)
+        run: pnpm --filter @corra/stellar exec vitest run src/channels.test.ts src/setup-shape.test.ts
 
   build:
     runs-on: ubuntu-latest

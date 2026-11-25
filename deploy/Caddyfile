@@ -7,9 +7,13 @@ api.corra.money {
 	}
 }
 
+stats.corra.money {
+	reverse_proxy goatcounter:8080
+}
+
 anchor.corra.money {
 	# The anchor's own SEP-24 deposit page lives on its business server.
-	@business path /sep24/interactive* /sep24/more_info* /sep24/simulate*
+	@business path /sep24/interactive* /sep24/more_info* /sep24/simulate* /sep24/withdraw-confirm*
 	handle @business {
 		reverse_proxy anchor-business:8091
 	}

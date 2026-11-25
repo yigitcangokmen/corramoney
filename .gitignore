@@ -8,3 +8,4 @@ preview.html
 _preview.mjs
 deploy/orchestrator.env
 deploy/.secrets
+.local-stack/

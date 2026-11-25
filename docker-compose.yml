@@ -15,5 +15,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # Usage counts for the local stack (scripts/local-stack.sh): http://stats.localhost:8094
+  goatcounter:
+    image: arp242/goatcounter:2.7.0
+    ports:
+      - "127.0.0.1:8094:8080"
+    volumes:
+      - goatcounter-data:/home/goatcounter/goatcounter-data
+
 volumes:
   pgdata:
+  goatcounter-data:
