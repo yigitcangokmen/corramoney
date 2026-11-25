@@ -19,4 +19,7 @@ COPY services/orchestrator ./services/orchestrator
 
 ENV NODE_ENV=production
 EXPOSE 8787
-CMD ["pnpm", "--filter", "@corra/orchestrator", "start"]
+# node itself is the process (no pnpm or tsx wrapper in between), so the SIGTERM from Docker's init
+# reaches the shutdown handler in src/index.ts.
+WORKDIR /app/services/orchestrator
+CMD ["node", "--import", "tsx", "src/index.ts"]

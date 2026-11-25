@@ -21,7 +21,7 @@
     "@corra/shared": "workspace:^",
     "@corra/stellar": "workspace:^",
     "@fastify/cors": "^11",
-    "@stellar/stellar-sdk": "^17.2.1",
+    "@stellar/stellar-sdk": "17.4.0",
     "fastify": "^5",
     "pg": "^8",
     "tsx": "^4.19.2"

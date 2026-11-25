@@ -4,8 +4,9 @@
  * publishes as SIGNING_KEY in its own stellar.toml.
  *
  * A SEP-10 challenge has sequence 0 and only manageData operations, so it can never be
- * submitted and moves no value. This module refuses anything else. It is one of the two places
- * the no-server-side-signing CI job allows a Keypair; the other is packages/stellar/src/sponsor.ts.
+ * submitted and moves no value. This module refuses anything else. It is one of the three places
+ * the no-server-side-signing CI job allows a Keypair; the others are packages/stellar/src/sponsor.ts
+ * and packages/stellar/src/channels.ts.
  */
 import * as S from '@stellar/stellar-sdk';
 

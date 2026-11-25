@@ -15,7 +15,7 @@ import {
   type PaymentState,
   type Quote,
 } from '@corra/shared';
-import { SagaError, type LegUpdate, type NewEvent, type SagaStore } from '@corra/settlement-saga';
+import { SagaError, type CashOutPatch, type CashOutUnless, type LegUpdate, type NewEvent, type SagaStore } from '@corra/settlement-saga';
 
 const conflict = (code: string, message: string) => new SagaError(code, 409, message);
 
@@ -70,6 +70,7 @@ function paymentFromRow(r: Row, legs: Leg[]): Payment {
     supersedesId: r.supersedes_id,
     createdAt: new Date(r.created_at).getTime(),
     updatedAt: new Date(r.updated_at).getTime(),
+    kind: r.kind,
   };
 }
 
@@ -154,11 +155,11 @@ export class PostgresSagaStore implements SagaStore {
         const corridor = corridorToWire(p.corridor);
         await c.query(
           `INSERT INTO payments (id, public_id, idempotency_key, sender_account, recipient_account, corridor_from, corridor_to,
-             quote, source_raw, dest_raw, send_max_raw, signed_xdr, inner_tx_hash, max_time, supersedes_id, state, created_at, updated_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17)`,
+             quote, source_raw, dest_raw, send_max_raw, signed_xdr, inner_tx_hash, max_time, supersedes_id, state, created_at, updated_at, kind)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17,$18)`,
           [p.id, p.publicId, p.idemKey, p.senderAccount, p.recipientAccount, corridor.from, corridor.to,
             quoteToWire(p.quote), p.quote.source.raw.toString(), p.quote.dest.raw.toString(), p.quote.maxSend.raw.toString(),
-            p.signedXdr, p.innerTxHash, new Date(p.maxTime * 1000), p.supersedesId, p.state, new Date(p.createdAt)],
+            p.signedXdr, p.innerTxHash, new Date(p.maxTime * 1000), p.supersedesId, p.state, new Date(p.createdAt), p.kind],
         );
         await this.upsertLegs(c, p.id, p.legs);
         for (const e of events) await this.appendEvent(c, p.id, e);
@@ -181,6 +182,9 @@ export class PostgresSagaStore implements SagaStore {
       }
       if (e?.code === '23505' && String(e?.constraint).includes('supersedes_id')) {
         throw conflict('ALREADY_SUPERSEDED', 'this payment was already re-signed');
+      }
+      if (e?.code === '23505' && String(e?.constraint).includes('balance_in_flight')) {
+        throw new SagaError('PAYMENT_IN_PROGRESS', 409, 'a payment from this sender is already being settled; wait for it to finish', true);
       }
       throw e;
     }
@@ -230,6 +234,17 @@ export class PostgresSagaStore implements SagaStore {
     return out;
   }
 
+  async listByAccount(account: string, role: 'sender' | 'recipient', limit: number) {
+    // The column comes from a two-value union, never from input.
+    const column = role === 'sender' ? 'sender_account' : 'recipient_account';
+    const r = await this.pool.query(`SELECT * FROM payments WHERE ${column} = $1 ORDER BY created_at DESC LIMIT $2`, [account, limit]);
+    if (!r.rows.length) return [];
+    const legs = await this.pool.query('SELECT * FROM legs WHERE payment_id = ANY($1) ORDER BY created_at, kind', [r.rows.map((x) => x.id)]);
+    const by = new Map<string, Leg[]>();
+    for (const l of legs.rows) by.set(l.payment_id, [...(by.get(l.payment_id) ?? []), legFromRow(l)]);
+    return r.rows.map((x) => paymentFromRow(x, by.get(x.id) ?? []));
+  }
+
   async transition(id: string, from: PaymentState, to: PaymentState, patch: { signedXdr?: string | null; legs?: LegUpdate[] }, event: NewEvent) {
     return this.tx(async (c) => {
       const cur = await this.load(c, 'id', id, true);
@@ -254,6 +269,66 @@ export class PostgresSagaStore implements SagaStore {
       if (p) out.push(p);
     }
     return out;
+  }
+
+  async recordCashOut(paymentId: string, expectTxHash: string | null, patch: CashOutPatch, event: NewEvent, unless?: CashOutUnless) {
+    try {
+      return await this.tx(async (c) => {
+        const p = await c.query('SELECT state FROM payments WHERE id = $1 FOR UPDATE', [paymentId]);
+        if (p.rows[0]?.state !== 'CREDITED') return null;
+        const leg = await c.query("SELECT tx_hash, status FROM legs WHERE payment_id = $1 AND kind = 'cash_out'", [paymentId]);
+        const cur = leg.rows[0];
+        if (!cur || cur.status === 'CONFIRMED' || (cur.tx_hash ?? null) !== expectTxHash) return null;
+        if (unless) {
+          const seen = await c.query('SELECT 1 FROM payment_events WHERE payment_id = $1 AND type = $2 AND data @> $3::jsonb LIMIT 1',
+            [paymentId, unless.type, JSON.stringify(unless.match)]);
+          if (seen.rows.length) return null;
+        }
+        // Explicit values, never COALESCE: a null in the patch clears the column.
+        await c.query(
+          `UPDATE legs SET
+             external_ref = CASE WHEN $2 THEN $3 ELSE external_ref END,
+             tx_hash = CASE WHEN $4 THEN $5 ELSE tx_hash END,
+             status = COALESCE($6, status), updated_at = $7
+           WHERE payment_id = $1 AND kind = 'cash_out'`,
+          [paymentId, patch.externalRef !== undefined, patch.externalRef ?? null, patch.txHash !== undefined, patch.txHash ?? null,
+            patch.status ?? null, this.ts()],
+        );
+        await this.appendEvent(c, paymentId, event);
+        return this.load(c, 'id', paymentId);
+      });
+    } catch (e: any) {
+      if (e?.code === '23505' && String(e?.constraint).includes('legs_cash_out_tx_key')) {
+        throw conflict('DUPLICATE_TRANSACTION', 'this signed transaction already backs another payment');
+      }
+      if (e?.code === '23505' && String(e?.constraint).includes('external_ref')) {
+        throw conflict('CASH_OUT_REF_TAKEN', 'this anchor reference already belongs to another payment');
+      }
+      throw e;
+    }
+  }
+
+  async findPaymentByCashOutRef(anchorId: string, ref: string) {
+    const r = await this.pool.query("SELECT payment_id FROM legs WHERE kind = 'cash_out' AND anchor_id = $1 AND external_ref = $2", [anchorId, ref]);
+    return r.rows[0] ? this.getPayment(r.rows[0].payment_id) : null;
+  }
+
+  async listOpenCashOuts(idleMs: number, now: number, limit: number) {
+    const r = await this.pool.query(
+      `SELECT p.* FROM payments p JOIN legs l ON l.payment_id = p.id
+       WHERE l.kind = 'cash_out' AND l.status = 'PENDING' AND l.tx_hash IS NOT NULL AND l.updated_at <= $1 AND p.state = 'CREDITED'
+       ORDER BY l.updated_at LIMIT $2`,
+      [new Date(now - idleMs), limit],
+    );
+    if (!r.rows.length) return [];
+    const legs = await this.pool.query('SELECT * FROM legs WHERE payment_id = ANY($1) ORDER BY created_at, kind', [r.rows.map((x) => x.id)]);
+    const by = new Map<string, Leg[]>();
+    for (const l of legs.rows) by.set(l.payment_id, [...(by.get(l.payment_id) ?? []), legFromRow(l)]);
+    return r.rows.map((x) => paymentFromRow(x, by.get(x.id) ?? []));
+  }
+
+  async touchCashOut(paymentId: string) {
+    await this.pool.query("UPDATE legs SET updated_at = $2 WHERE payment_id = $1 AND kind = 'cash_out'", [paymentId, this.ts()]);
   }
 
   async events(id: string): Promise<PaymentEvent[]> {
