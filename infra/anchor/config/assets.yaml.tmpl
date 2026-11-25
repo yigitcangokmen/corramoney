@@ -1,4 +1,4 @@
-# TESTMXN: team-issued testnet token pegged 1:1 to MXN. SEP-24 deposit only.
+# Team-issued testnet tokens pegged 1:1 to their fiat. TESTMXN: SEP-24 deposit only. TESTPHP: SEP-24 withdraw only.
 items:
   - id: stellar:TESTMXN:${CORRIDOR_ISSUER}
     distribution_account: ${ANCHOR_DISTRIBUTION}
@@ -37,3 +37,30 @@ items:
       buy_delivery_methods:
         - name: SPEI
           description: Receive MXN via SPEI.
+  # TESTPHP: SEP-24 withdraw only (simulated cash pickup). Deposits of TESTPHP stay off.
+  - id: stellar:TESTPHP:${CORRIDOR_ISSUER}
+    distribution_account: ${ANCHOR_DISTRIBUTION}
+    significant_decimals: 7
+    sep6:
+      enabled: false
+    sep24:
+      enabled: true
+      deposit:
+        enabled: false
+      withdraw:
+        enabled: true
+        min_amount: 1
+        max_amount: 1000000
+        methods:
+          - cash_pickup
+    sep31:
+      enabled: false
+    sep38:
+      enabled: false
+  # The off-chain side of a TESTPHP withdrawal (amount_out of request_onchain_funds).
+  - id: iso4217:PHP
+    significant_decimals: 2
+    sep31:
+      enabled: false
+    sep38:
+      enabled: false

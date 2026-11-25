@@ -66,12 +66,14 @@ writeFileSync(
   join(out, 'business.env'),
   [
     `SEP24_INTERACTIVE_URL_JWT_SECRET=${secrets.SECRET_SEP24_INTERACTIVE_URL_JWT_SECRET}`,
+    `SEP24_MORE_INFO_URL_JWT_SECRET=${secrets.SECRET_SEP24_MORE_INFO_URL_JWT_SECRET}`,
     `ANCHOR_DISTRIBUTION_SECRET=${testnet.ANCHOR_DISTRIBUTION_SECRET}`,
     `ASSET_CODE=TESTMXN`,
     `ASSET_ISSUER=${TESTNET.corridorIssuer}`,
+    `WITHDRAW_ASSET_CODE=TESTPHP`,
     `PLATFORM_API_URL=http://platform:8085`,
     '',
   ].join('\n'),
 );
 
-console.log(`anchor config written to ${out}\n  SEP-10 SIGNING_KEY ${sep10Key}\n  TESTMXN issuer     ${TESTNET.corridorIssuer}\n  distribution       ${TESTNET.anchorDistribution}`);
+console.log(`anchor config written to ${out}\n  SEP-10 SIGNING_KEY ${sep10Key}\n  TESTMXN issuer     ${TESTNET.corridorIssuer}\n  distribution       ${TESTNET.anchorDistribution}\n  TESTPHP withdraw enabled`);
