@@ -1,0 +1,44 @@
+{
+  "phase": "pre-reset",
+  "origin": "prod",
+  "orchestrator": "https://api.corra.money",
+  "writtenAt": "2026-11-25T17:51:45.749Z",
+  "network": "testnet",
+  "ledger": 5921092,
+  "attempts": 1,
+  "users": [
+    {
+      "account": "GCRSPPIFBFINDJST3VUGHFADYPKJ4R6KPG2XT6BSOSUWW35UR5IPMSIT",
+      "paymentAccount": "GAMMFTHGZE2X3RADLKHR3HGU4Q5SGHFF3EUB42BP5CQ5PX57ULIFQZU2",
+      "channel": "GDB5L5IT34T24FJ2VVDP6LP7VR5EPGGX5Z6QFYK5LSAUIJUXNP2GD5GB",
+      "paymentAccountTx": "54bcbd1f68bde990476d290c96114899e9a753a75c4fbc9a014dfaa7d54f09a5",
+      "accountTx": "61ba6280ee2fae9aae4e1058146c167fbdc3f040a790f1e50c6f0d24eb5e58c8",
+      "ledgers": {
+        "paymentAccount": 5921091,
+        "account": 5921092
+      }
+    },
+    {
+      "account": "GBNZVBOPFNC253FEML34SE6MVZ6QR6F52COMOELFKMLXMBVCEOVYV7HU",
+      "paymentAccount": "GDYGIHVXMR2WV534H3N7KIO3Y3VVAMKOL6TSSTBWXGZR5X4WFEAKHUZR",
+      "channel": "GBD5AGFUZTFW53CXJ4KKLB4PKE3D3NW4XCCPYDWV54RPI6E6A4PQJLQK",
+      "paymentAccountTx": "333c059efbcdb5bf882acd8fb3233c98cde4052b00b682bb1e58a84dec1dfbd3",
+      "accountTx": "8cb6a05a7d087b8704a587e816772d5433ed067250c92c4a4f007e724f041e51",
+      "ledgers": {
+        "paymentAccount": 5921091,
+        "account": 5921092
+      }
+    },
+    {
+      "account": "GDUGRPXVKZZRADU6VFML7VKKDDEPKPOSHT5VAOVT3QMAXLQVW4E4SP25",
+      "paymentAccount": "GBL7A43RRPQ6ETVPGTSGB4R5WI4QE4OBV23JWGFOTPIBGZWE4RFKNWQI",
+      "channel": "GCHPMPNRDH7KS7BOT6YTHUC3T5XIKLLTOS2WB5KX2OZQZT55GBAHKNLT",
+      "paymentAccountTx": "8678f38fd6cb2162b7916007d3bdef1428c3081169807b8a5ed4b2f75c374008",
+      "accountTx": "66ebf8de624db256a8309c2f3a63717cc22e36b736b6c189fc05f8f9257202fc",
+      "ledgers": {
+        "paymentAccount": 5921091,
+        "account": 5921092
+      }
+    }
+  ]
+}

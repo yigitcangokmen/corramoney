@@ -1,0 +1,58 @@
+{
+  "phase": "pre-reset",
+  "origin": "prod",
+  "orchestrator": "https://api.corra.money",
+  "writtenAt": "2026-11-25T17:52:20.726Z",
+  "network": "Test SDF Network ; September 2015",
+  "pool": "CAL5ZEAT7XIP5B7AAUJD6WOVG2W7YDIE27HNF7ABQIC3HBOC42TQFWHS",
+  "asset": "CCVVFAFYCJYOY3EJUDBOQU5TCY2TYG3W4RGIIOLLNVMWL7KWF52RGNVS",
+  "account": "GBPQCCREURLF6SYDKDG5CVYSAYL5T3TTNBYFUSBBCAVOVOFJ4WXMGF2X",
+  "paymentAccount": "GAFJEH5HGVG4NOG4AULJSH4TDI76SIGVJ66LMXBBMHKYTSI6N43M2G62",
+  "paymentAccountSetup": "717dd05e5bec8d36f6e7c4fcab6030dce77dfaa2aad68b713fb6e2a9f43ca122",
+  "setup": "366c956c41da0e95a34fd18c3ac487e49862706a68fe298e4704c38c1ffb966a",
+  "funding": "07d19726cd10f13aa18831a6ecf87d4a0bd1e95744fd3963e6ef26ed4fffa9d0",
+  "supply": {
+    "outer": "2b7bb683199b55e6d767dd3137b5207f213d65d7afb528bd1c281ea8166631ef",
+    "inner": "bce89d6779cc2f4bf54af8f12c28804c6517ac5513589dd221e1ebab90864534",
+    "ledger": 5921097,
+    "resourceFee": "533684",
+    "fee_charged": "461701"
+  },
+  "withdraw": {
+    "outer": "77818a9b44ca7dae9026ec7eac0c50bf07b331468397fe2e601982a454ee11f7",
+    "inner": "cd7a6a804afa02e203a2b1c6acefefcf9a8553e65d4aef7187925a52081b1c80",
+    "ledger": 5921099,
+    "resourceFee": "17689",
+    "fee_charged": "12962"
+  },
+  "refusals": [
+    {
+      "label": "replay",
+      "status": 200,
+      "id": "pop_00c8383663a3487db2cb6fc195432895"
+    },
+    {
+      "label": "duplicate",
+      "status": 409,
+      "code": "DUPLICATE_TRANSACTION"
+    },
+    {
+      "label": "request type 2 (supply collateral)",
+      "status": 422,
+      "code": "REFUSED",
+      "message": "only supply or withdraw"
+    },
+    {
+      "label": "to = another account",
+      "status": 422,
+      "code": "REFUSED",
+      "message": "from, spender and to must be the signer"
+    },
+    {
+      "label": "two requests",
+      "status": 422,
+      "code": "REFUSED",
+      "message": "exactly one request"
+    }
+  ]
+}

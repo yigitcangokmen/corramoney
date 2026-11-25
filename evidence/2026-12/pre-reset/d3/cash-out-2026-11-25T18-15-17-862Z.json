@@ -1,0 +1,120 @@
+{
+  "phase": "pre-reset",
+  "origin": "prod",
+  "orchestrator": "https://api.corra.money",
+  "writtenAt": "2026-11-25T18:15:17.875Z",
+  "network": "Test SDF Network ; September 2015",
+  "payment": {
+    "id": "pmt_961c02ab3c3a42929977a7d6c8cdcd10",
+    "publicId": "CORRA-YH3C3E"
+  },
+  "recipient": "GDF2MGJAV36JHH7PB7NG6WFFTWLQHBMHULFDNUW5ZSJ62IAEG7JOZFKA",
+  "paymentAccount": "GAGPQLHIVYR374J4G6KFPZIK7DIBQCZWSIYVAJC5HV7HO7C5ZCQI3X7D",
+  "distribution": "GCBZMGCVXOMZPWHXCY3C7MNKTC6NQUZS5SPFQFCDTPAIEMI2KJ5CUKI4",
+  "feeSponsor": "GCMOKBKDJFIHCFFC2DAHGH77IZTBJZVNCPO4UWQZLSTGEIIBWDGJLBF6",
+  "amount": "1000.0000000",
+  "asset": "TESTPHP:GDTNYFOB2EKTKIV3N4MG36R3ULZWT46C7HKCVJR7352BPCQJTG7EWIB6",
+  "anchor": {
+    "id": "da7cd59f-69e9-45f8-8982-c20f3224c039",
+    "status": "completed",
+    "payout": "sim-cash-pickup-da7cd59f",
+    "stellarTxId": "93ba8f2fe1b2d52b77c2ef18d8d69847a8499a4eb01616e4bdefe3b12cd89fdb",
+    "moreInfo": "https://anchor.corra.money/sep24/more_info?transaction_id=da7cd59f-69e9-45f8-8982-c20f3224c039"
+  },
+  "moreInfoHtml": "pre-reset/d3/more-info-da7cd59f-69e9-45f8-8982-c20f3224c039.html",
+  "withdrawal": {
+    "envelope": "93ba8f2fe1b2d52b77c2ef18d8d69847a8499a4eb01616e4bdefe3b12cd89fdb",
+    "inner": "e702639322f62c794e3ad2b71595fd9673bde3a154306c79efdf0907b7e5a606",
+    "ledger": 5921373,
+    "memo": {
+      "type": "id",
+      "value": "4722573366824400899"
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "type": "QUOTED",
+      "data": {
+        "quoteId": "qt_c373af6613d1404a8fa32cbe65226072"
+      }
+    },
+    {
+      "seq": 2,
+      "type": "SIGNED",
+      "data": {
+        "maxTime": 1795632285,
+        "innerTxHash": "d5729c1eca2efa8c5587630f320a05bce8d8cb15fccf71bdab565b4ca2d95118"
+      }
+    },
+    {
+      "seq": 3,
+      "type": "CASH_IN",
+      "data": {
+        "depositTx": "b656ce4067c76aebaa1e9251ee6ae5fe1438f5622f5ee7110aa8a29525feb279"
+      }
+    },
+    {
+      "seq": 4,
+      "type": "ONCHAIN",
+      "data": {
+        "ledger": 5921371,
+        "txHash": "3bad78750296ef3264c00d8413f2074b75a1bfbb2226933d1a86908fabc70d74"
+      }
+    },
+    {
+      "seq": 5,
+      "type": "CREDITED",
+      "data": {
+        "ledger": 5921371,
+        "txHash": "3bad78750296ef3264c00d8413f2074b75a1bfbb2226933d1a86908fabc70d74"
+      }
+    },
+    {
+      "seq": 6,
+      "type": "CASH_OUT_SUBMITTED",
+      "data": {
+        "ref": "da7cd59f-69e9-45f8-8982-c20f3224c039",
+        "txHash": "e702639322f62c794e3ad2b71595fd9673bde3a154306c79efdf0907b7e5a606",
+        "maxTime": 1795630805
+      }
+    },
+    {
+      "seq": 7,
+      "type": "CASH_OUT_ONCHAIN",
+      "data": {
+        "ref": "da7cd59f-69e9-45f8-8982-c20f3224c039",
+        "ledger": 5921373,
+        "txHash": "93ba8f2fe1b2d52b77c2ef18d8d69847a8499a4eb01616e4bdefe3b12cd89fdb"
+      }
+    },
+    {
+      "seq": 8,
+      "type": "CASH_OUT_ANCHOR_COMPLETED",
+      "data": {
+        "ref": "da7cd59f-69e9-45f8-8982-c20f3224c039",
+        "externalId": "sim-cash-pickup-da7cd59f",
+        "moreInfoUrl": "https://anchor.corra.money/sep24/more_info?transaction_id=da7cd59f-69e9-45f8-8982-c20f3224c039",
+        "withdrawMemo": {
+          "type": "id",
+          "value": "4722573366824400899"
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "type": "CASHED_OUT",
+      "data": {
+        "ref": "da7cd59f-69e9-45f8-8982-c20f3224c039",
+        "ledger": 5921373,
+        "payout": "sim-cash-pickup-da7cd59f",
+        "txHash": "93ba8f2fe1b2d52b77c2ef18d8d69847a8499a4eb01616e4bdefe3b12cd89fdb",
+        "moreInfoUrl": "https://anchor.corra.money/sep24/more_info?transaction_id=da7cd59f-69e9-45f8-8982-c20f3224c039"
+      }
+    }
+  ],
+  "refused": {
+    "amountPlusOneStroop": "UNBOUND_TRANSACTION"
+  },
+  "replay": true
+}

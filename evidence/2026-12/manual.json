@@ -21,6 +21,23 @@
       ],
       "note": "History tab on the local stack (headless Chrome, a keypair standing in for Freighter): a deposit with its anchor reference (b6b7fa95-95f0-4348-986c-56351c99d969, matched by ref), Anchor record and stellar.expert links, and a send from the balance. The account shown is GC7SCNH5VM73G5AHY5BGUMCCQOH3TQWC4JEC33LNYSUY3A25X3WDAWZO (app-run 2026-11-25T10-10-50), not the D1 sender above: balance-check discards its sender's secret, so that sender's History cannot be opened. A History screenshot for the D1 sender needs a run whose keys are kept (for example the post-reset app run)",
       "at": "2026-11-25T10:11:00.000Z"
+    },
+    {
+      "item": "D3.ci",
+      "phase": "pre-reset",
+      "origin": "other",
+      "links": [
+        {
+          "label": "CI run (no-server-side-signing job, 6958010)",
+          "url": "https://github.com/yigitcangokmen/corramoney/actions/runs/45650434237"
+        },
+        {
+          "label": "Quickstart run (testnet, 6958010)",
+          "url": "https://github.com/yigitcangokmen/corramoney/actions/runs/45650434130"
+        }
+      ],
+      "note": "Green CI and Quickstart on main at 6958010, the month-2 release commit set",
+      "at": "2026-11-25T17:30:00.000Z"
     }
   ],
   "pins": {},
