@@ -4,13 +4,18 @@ import type { AppState, Ctl } from './types';
 
 const INITIAL: AppState = {
   tab:'deposit',
-  pick:'PH', addr:'', remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false,
+  pick:'PH', addr:'', remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false, mxnTrusted:false, paymentAccount:null,
   anchorToken:null, anchorTokenExp:0, payment:null, cashInUrl:null,
   remitBusy:null, remitError:null, trackError:null, popupBlocked:false, depositSkipped:false, freighterMissing:false,
   sign:null, signState:'ask',
   wallet:0,
   history:[],
-  walletMode:'none', pubkey:null, connecting:false
+  walletMode:'none', pubkey:null, connecting:false,
+  payFrom:'anchor', walletSpendable:'0', otherBalances:{}, balanceAt:0, balanceTriedAt:0, balanceFails:0, signedWaiting:false,
+  depositStep:'form', depositAmount:'', deposit:null, depositUrl:null, depositUrlAt:0, depositBusy:null,
+  depositError:null, depositPopupBlocked:false,
+  poolRead:'idle', pool:null, poolReadAt:0, poolReadError:null, poolAmount:'', poolStep:'form', poolBusy:null,
+  poolError:null, poolDone:null, phpTrusted:false, phpSpendable:'0', cashOutRead:'idle', cashOutRows:[], cashOutActive:null, cashOutBusy:null, cashOutError:null, cashOutPopupBlocked:false
 };
 
 function makeCTL(overrides: Partial<AppState> = {}): Ctl {

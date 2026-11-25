@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { css } from '../logic/styles';
 import type { Vals } from '../logic/vals';
 
-const label = "font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)";
-const panel = "padding:var(--sp-4); background:var(--sunken); border:1px solid var(--line); border-radius:var(--r-sm); display:flex; flex-direction:column; gap:var(--sp-3)";
-const note = "padding:var(--sp-4); background:var(--weak); border:1px solid var(--weak-line); border-radius:var(--r-sm)";
-const mono = "font-family:var(--mono)";
+export const label = "font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--subtle)";
+export const panel = "padding:var(--sp-4); background:var(--sunken); border:1px solid var(--line); border-radius:var(--r-sm); display:flex; flex-direction:column; gap:var(--sp-3)";
+export const note = "padding:var(--sp-4); background:var(--weak); border:1px solid var(--weak-line); border-radius:var(--r-sm)";
+export const mono = "font-family:var(--mono)";
 
 function Busy({ v }: { v: Vals }) {
   return <div aria-live="polite">{busyBody(v)}</div>;
@@ -38,7 +38,7 @@ function PopupLink({ v }: { v: Vals }) {
   );
 }
 
-function Row({ k, val, strong }: { k: string; val: React.ReactNode; strong?: boolean }) {
+export function Row({ k, val, strong }: { k: string; val: React.ReactNode; strong?: boolean }) {
   return (
     <div style={css("display:flex; justify-content:space-between; gap:var(--sp-3); font-size:14px")}>
       <span style={css("color:var(--muted)")}>{k}</span>
@@ -118,23 +118,42 @@ export default function Send({ v }: { v: Vals }) {
             <div style={css("margin-top:var(--sp-5); " + panel)}>
               <Row k="They receive (fixed)" val={v.receive} strong />
               <Row k="You pay at most (signed cap)" val={v.payUpTo} />
-              <Row k="SPEI deposit at the anchor" val={v.depositDue} />
+              {v.payFromBalance ? <Row k="Paid from" val="your balance" /> : <Row k="SPEI deposit at the anchor" val={v.depositDue} />}
               <Row k="Current cost" val={v.payEst} />
               <Row k="Route" val={v.route} />
               <Row k="Slippage allowance" val={v.slippage} />
               <div style={css("height:1px; background:var(--line)")}></div>
               <Row k="Recipient" val={v.recipientShort} />
               <Row k="Quote" val={v.quoteId} />
-              <Row k="Anchor SEP-38 quote" val={v.anchorQuote} />
+              {v.payFromBalance ? null : <Row k="Anchor SEP-38 quote" val={v.anchorQuote} />}
             </div>
+
+            {v.canPayFromBalance ? (
+              <div>
+                <div style={css("margin-top:var(--sp-5); " + label)}>Pay with</div>
+                <div style={css("margin-top:var(--sp-3); display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:var(--sp-2)")}>
+                  {(v.payChoices || []).map((c: any) => (
+                    <button key={c.label} onClick={c.pick} aria-pressed={c.pressed} disabled={v.signDisabled} style={css(c.style)}>
+                      <span style={css("display:block; font-size:14px; font-weight:600")}>{c.label}</span>
+                      <span style={css("display:block; " + mono + "; font-size:11px; color:var(--muted); margin-top:2px")}>{c.detail}</span>
+                    </button>
+                  ))}
+                </div>
+                {v.signedWaitingHint ? <div style={css("margin-top:var(--sp-2); " + mono + "; font-size:11px; color:var(--amber)")}>{v.signedWaitingHint}</div> : null}
+              </div>
+            ) : v.balanceShortText ? (
+              <div style={css("margin-top:var(--sp-3); " + mono + "; font-size:11px; color:var(--muted)")}>{v.balanceShortText}</div>
+            ) : null}
 
             <div style={css("margin-top:var(--sp-4); " + note)}>
               <div style={css("font-size:15px; font-weight:600; color:var(--ink-brand)")}>
                 {v.promptsLeft === 1 ? 'One Freighter prompt' : v.promptsLeft + ' Freighter prompts'}</div>
               <ol style={css("margin:var(--sp-2) 0 0; padding-left:var(--sp-5); font-size:13.5px; color:var(--ink-brand); display:flex; flex-direction:column; gap:var(--sp-1)")}>
+                {v.payFromBalance ? <li>Sign the payment. Corra submits it at once from your balance; the signature dies on its own in 5 minutes.</li> : <>
                 <li style={css(v.loginDone ? "opacity:.55; text-decoration:line-through" : "")}>{v.loginLine}</li>
-                <li style={css(v.setupDone ? "opacity:.55; text-decoration:line-through" : "")}>Set up your account. Corra sponsors the reserves, so you need no XLM.</li>
+                <li style={css(v.setupPromptDone ? "opacity:.55; text-decoration:line-through" : "")}>Set up your account. Corra sponsors the reserves, so you need no XLM.</li>
                 <li>Sign the payment. Corra holds it, never your key, and submits it only after your cash-in lands. It dies on its own in 30 minutes.</li>
+                </>}
               </ol>
             </div>
 

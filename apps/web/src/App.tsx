@@ -4,23 +4,35 @@ import * as helpers from './logic/helpers';
 import * as signing from './logic/signing';
 import * as remit from './logic/remit';
 import * as wallet from './logic/wallet';
+import * as deposit from './logic/deposit';
+import * as pool from './logic/pool';
+import * as cashout from './logic/cashout';
 import type { AppState, Ctl, Props } from './logic/types';
 import TopBar from './components/TopBar';
 import Tabs from './components/Tabs';
 import Send from './components/Send';
+import Balance from './components/Balance';
 import History from './components/History';
+import CashOut from './components/CashOut';
 import SigningSheet from './components/SigningSheet';
 
 const INITIAL: AppState = {
   tab:'send',
   pick:'PH', addr:'',
-  remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false,
+  remitStep:'form', destDigits:'1000', quote:null, anchorQuote:null, setupDone:false, mxnTrusted:false, paymentAccount:null,
   anchorToken:null, anchorTokenExp:0, payment:null, cashInUrl:null,
   remitBusy:null, remitError:null, trackError:null, popupBlocked:false, depositSkipped:false, freighterMissing:false,
   sign:null, signState:'ask',
   wallet:0,
   history:[],
-  walletMode:'none', pubkey:null, connecting:false
+  walletMode:'none', pubkey:null, connecting:false,
+  payFrom:'anchor', walletSpendable:'0', otherBalances:{}, balanceAt:0, balanceTriedAt:0, balanceFails:0, signedWaiting:false,
+  depositStep:'form', depositAmount:'', deposit:null, depositUrl:null, depositUrlAt:0, depositBusy:null,
+  depositError:null, depositPopupBlocked:false,
+  poolRead:'idle', pool:null, poolReadAt:0, poolReadError:null, poolAmount:'', poolStep:'form', poolBusy:null,
+  poolError:null, poolDone:null,
+  phpTrusted:false, phpSpendable:'0', cashOutRead:'idle', cashOutRows:[], cashOutActive:null, cashOutBusy:null,
+  cashOutError:null, cashOutPopupBlocked:false
 };
 
 const PROPS: Props = { mxnPerUsd: 18.35, spread: 0.005 };
@@ -31,13 +43,13 @@ export default function App() {
   live.current = state;
   const balPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ctl.state must read the patch at once: React may run a setState updater only at the next
+  // render, and c.connect reads walletMode right after wallet.connect's last set.
   const set = useCallback((patch: any) => {
-    setState(prev => {
-      const next = typeof patch === 'function' ? patch(prev) : patch;
-      const merged: AppState = { ...prev, ...(next || {}) };
-      live.current = merged;
-      return merged;
-    });
+    const next = typeof patch === 'function' ? patch(live.current) : patch;
+    const merged: AppState = { ...live.current, ...(next || {}) };
+    live.current = merged;
+    setState(merged);
   }, []);
 
   const ctl = useMemo(() => {
@@ -67,12 +79,31 @@ export default function App() {
     c.resetRemit = () => remit.resetRemit(c);
     c.restartDeposit = () => remit.restartDeposit(c);
     c.openDepositWindow = () => remit.openDepositWindow(c);
+    c.addMoney = () => deposit.startAddMoney(c);
+    c.setupAccount = () => deposit.setupAccount(c);
+    c.openAnchorPage = () => deposit.openAnchorPage(c);
+    c.resetDeposit = () => deposit.resetDeposit(c);
+    c.movePool = (kind: 'supply' | 'withdraw') => pool.movePool(c, kind);
+    c.resetPool = () => pool.resetPool(c);
+    c.refreshCashOuts = () => cashout.refreshCashOuts(c);
+    c.setupCashOut = () => cashout.setupCashOut(c);
+    c.startCashOut = (id: string) => cashout.startCashOut(c, id);
+    c.signCashOut = () => cashout.signCashOut(c);
+    c.openCashOutPage = () => cashout.openCashOutPage(c);
+    c.resetCashOut = () => cashout.resetCashOut(c);
 
     c.connect = async () => {
       await wallet.connect(c);
       if (c.state.walletMode === 'none') return;
       if (balPollRef.current) clearInterval(balPollRef.current);
-      balPollRef.current = setInterval(() => wallet.refreshBalances(c), 8000);
+      // The pool position and the Cash out list ride the same 8 s tick, only while their tab is open.
+      pool.refreshPool(c);
+      if (c.state.tab === 'cashout') cashout.refreshCashOuts(c);
+      balPollRef.current = setInterval(() => {
+        wallet.refreshBalances(c);
+        if (c.state.tab === 'balance') pool.refreshPool(c);
+        if (c.state.tab === 'cashout') cashout.refreshCashOuts(c);
+      }, 8000);
     };
     c.disconnect = () => {
       if (balPollRef.current) clearInterval(balPollRef.current);
@@ -89,6 +120,15 @@ export default function App() {
       if (balPollRef.current) clearInterval(balPollRef.current);
     };
   }, [set]);
+
+  // Browsers slow a background tab's timers: one fresh read when the tab is shown again.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && ctl.state.walletMode === 'freighter') wallet.refreshBalances(ctl).catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [ctl]);
 
   const v = buildVals(ctl);
 
@@ -134,6 +174,8 @@ export default function App() {
       <div style={{ maxWidth: 1080, margin: '0 auto',
         padding: 'var(--sp-7) var(--sp-5) var(--sp-9)', boxSizing: 'border-box' }}>
         {v.isSend ? <Send v={v} /> : null}
+        {v.isBalance ? <Balance v={v} /> : null}
+        {v.isCashOut ? <CashOut v={v} /> : null}
         {v.isHistory ? <History v={v} /> : null}
       </div>
       {v.signOpen ? <SigningSheet v={v} /> : null}

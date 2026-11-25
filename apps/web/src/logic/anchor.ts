@@ -8,6 +8,7 @@
 import { PublicKeypair, Types, Wallet } from '@stellar/typescript-wallet-sdk';
 import { TESTNET } from '@corra/shared';
 import { api } from './api';
+import type { CashOutMemo } from './types';
 
 const CORRIDOR_ISSUER = TESTNET.corridorIssuer;
 
@@ -69,4 +70,41 @@ export async function startDeposit(
   });
   if (!dep.id || !dep.url) throw new Error('the anchor did not return an interactive deposit');
   return { id: dep.id, url: dep.url };
+}
+
+/**
+ * Starts a SEP-24 TESTPHP withdrawal of `amount` from the recipient's own account. The URL is
+ * the anchor's own page, where the recipient confirms; the anchor then names the account and memo
+ * to pay, read back with withdrawTransaction.
+ */
+export async function startWithdraw(token: string, account: string, amount: string): Promise<{ id: string; url: string }> {
+  const w = await anchor().sep24().withdraw({
+    assetCode: 'TESTPHP',
+    authToken: Types.AuthToken.from(token),
+    withdrawalAccount: account,
+    extraFields: { amount },
+  });
+  if (!w.id || !w.url) throw new Error('the anchor did not return an interactive withdrawal');
+  return { id: w.id, url: w.url };
+}
+
+export type WithdrawView = {
+  status: string; amountIn: string | null; anchorAccount: string | null; memo: CashOutMemo | null;
+  moreInfoUrl: string | null; stellarTxId: string | null; message: string | null;
+};
+
+/** The withdrawal as the anchor reports it to the recipient's own session. */
+export async function withdrawTransaction(token: string, id: string): Promise<WithdrawView> {
+  const t: any = await anchor().sep24().getTransactionBy({ authToken: Types.AuthToken.from(token), id });
+  const type = t.withdraw_memo_type;
+  return {
+    status: String(t.status),
+    amountIn: typeof t.amount_in === 'string' ? t.amount_in : null,
+    anchorAccount: typeof t.withdraw_anchor_account === 'string' ? t.withdraw_anchor_account : null,
+    memo: typeof t.withdraw_memo === 'string' && t.withdraw_memo && (type === 'id' || type === 'text' || type === 'hash')
+      ? { type, value: t.withdraw_memo } : null,
+    moreInfoUrl: typeof t.more_info_url === 'string' ? t.more_info_url : null,
+    stellarTxId: typeof t.stellar_transaction_id === 'string' ? t.stellar_transaction_id : null,
+    message: typeof t.message === 'string' ? t.message : null,
+  };
 }
