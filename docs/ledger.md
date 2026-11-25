@@ -61,7 +61,7 @@ CREATE TABLE payment_events (
 
 **What the ledger never stores.** No names, no phone numbers, no bank details, no identity documents, no KYC data. Customer identity stays with the anchor, which is the licensed party required to hold it. The only user-linked values here are Stellar account IDs, which are public by construction.
 
-**`signed_xdr` is a blob, not a key.** It is a transaction the sender already signed, fully bound to a recipient, an amount and a cap. It is deleted on submission or expiry. Corra signs nothing with a user's key. The server holds two keys of its own: the fee-and-sponsor account, which signs only fee-bump envelopes (CAP-15) and sponsorship setups (CAP-33) so the sender needs no XLM, and Corra's SEP-10 client_domain `SIGNING_KEY`, which co-signs only login challenges. Neither can move user value. A CI job named `no-server-side-signing` asserts that scoped invariant and prints the scope it checks; see the README for what it checks.
+**`signed_xdr` is a blob, not a key.** It is a transaction the sender already signed, fully bound to a recipient, an amount and a cap. It is deleted on submission or expiry. Corra signs nothing with a user's key. The server holds keys of its own: the fee-and-sponsor account, which signs only fee-bump envelopes (CAP-15) and sponsorship setups (CAP-33) so the sender needs no XLM, Corra's SEP-10 client_domain `SIGNING_KEY`, which co-signs only login challenges, and five channel accounts that only source sponsored setups creating an account (fee and sequence only; no reserve, no value, never a signer). None can move user value. A CI job named `no-server-side-signing` asserts that scoped invariant and prints the scope it checks; see the README for what it checks.
 
 ## 2. Allowed state transitions
 
@@ -98,7 +98,7 @@ stateDiagram-v2
 
 **`FAILED` keeps what the chain said.** `CAP_EXCEEDED` means `op_over_source_max` and nothing else. A payment that lands failed for any other reason (the recipient removed their trustline: `op_no_trust`; the sender spent the deposit: `op_underfunded`) is `FAILED`, and the Horizon result code is recorded on the event, never guessed.
 
-**One pending payment per sender.** Every payment from one sender is signed against the same `minSeqNum` window, so only one of them could ever land. `/confirm` refuses with `409 PAYMENT_IN_PROGRESS` while another payment of the sender is in `CASH_IN` or `ONCHAIN`, and expires any payment still in `SIGNED` with the reason `superseded by a newer payment`.
+**One pending payment per sender.** Every payment from one sender is signed against its payment account's `minSeqNum` window. Two blobs in the same slot of that window can never both land, but blobs in different slots can (a pre-signed one at sequence + 100 and a balance one at + 1), and a superseded blob stays valid on chain until its `maxTime`: anyone who holds it can fee-bump it. The ledger rule is what keeps Corra from submitting two: `/confirm` refuses with `409 PAYMENT_IN_PROGRESS` while another payment of the sender is in `CASH_IN` or `ONCHAIN`, and expires any payment still in `SIGNED` with the reason `superseded by a newer payment`; `/send` refuses with `409 SIGNED_PAYMENT_WAITING` while a pre-signed payment of the sender is `SIGNED`.
 
 **The cash-in is matched by memo.** The SEP-24 deposit carries a hash memo, `base64(sha256(payment id))`, and only credits with that memo count for the payment. Several credits with the same memo add up, so a short deposit can be topped up.
 
@@ -132,6 +132,9 @@ Every state advance happens inside a **single transaction**:
 - **Append-only timeline:** `payment_events` rows are never updated or deleted (a trigger refuses it).
 - **Event monotonicity:** `payment_events.seq` increases with no gaps; the timeline is the audit log.
 - **No user key in the schema:** no column holds a user's secret key, a seed, or anything from which one could be derived. `signed_xdr` is a signed artifact and is deleted on submission or expiry. The fee-and-sponsor key lives in the deployment's secret store, never in this database.
+- **CREDITED means the recipient holds the asset:** the `onchain` leg landed and the destination amount is in the recipient's own account. The `cash_out` leg is `PENDING` until the recipient's withdrawal is confirmed; it is a leg, not a payment state, and every cash-out event is appended with `from = to = CREDITED` (`CASH_OUT_SUBMITTED`, `CASH_OUT_ONCHAIN`, `CASH_OUT_FAILED`, `CASH_OUT_ANCHOR_COMPLETED`, `CASH_OUT_ANCHOR_FAILED`, `CASH_OUT_MISMATCH`, `CASHED_OUT`).
+- **A cash_out leg is CONFIRMED only with both witnesses:** the anchor's signed `completed` callback (with its `withdraw_memo`) and, on chain, the very payment Corra recorded and submitted for the leg, from the recipient to the anchor's distribution account, in TESTPHP, for exactly the leg amount, with that memo. A `CONFIRMED` cash_out leg always has an `external_ref` (`legs_cash_out_confirmed_has_ref`); Phase 1 legs carry `mock-payout:...`.
+- **One chain payment backs at most one cash-out:** `legs_cash_out_tx_key`, unique `tx_hash` over cash_out legs. The leg's `tx_hash` is written before submission and changes only by a compare-and-set; a second blob is refused while the first can still land.
 - **The chain outranks the ledger:** if the ledger says `ONCHAIN` and the chain says the transaction settled, the reconciler advances the ledger. The reconciler never makes a discretionary decision.
 
 ## 5. Reconciler

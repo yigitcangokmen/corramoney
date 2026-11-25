@@ -33,7 +33,7 @@ sequenceDiagram
     O->>K: submitPayment(signed XDR, fee-bumped by the sponsor)
     K->>X: path payment tx
     X-->>K: SUCCESS (atomic)
-    O->>L: ONCHAIN -> CREDITED (+ mock payout acknowledgement)
+    O->>L: ONCHAIN -> CREDITED (cash_out leg PENDING: Maria holds the TESTPHP)
     O-->>S: GET /payments/:id -> CREDITED (Maria received it)
     Note over S,X: Funds are in Maria's wallet: safe terminal state
     Note over O: Corra never held a key at any point
@@ -126,6 +126,41 @@ sequenceDiagram
     S->>O: POST /quote (fresh XDR to sign)
     Note over O,X: No funds moved on-chain. The cash-in balance stays with the sender.
 ```
+
+## 6. Cash-out: the recipient withdraws at the anchor (D3)
+
+The payment is `CREDITED` and stays so. The recipient's withdrawal is recorded on its `cash_out` leg.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as Recipient App
+    participant A as Anchor (SEP-24)
+    participant B as Anchor business server
+    participant O as Orchestrator
+    participant K as Stellar (fee-bump)
+    participant X as Stellar testnet
+
+    R->>A: SEP-10 (recipient's own session), SEP-24 withdraw TESTPHP, amount = the payment's
+    A-->>R: interactive URL (incomplete)
+    R->>B: the anchor's page: Confirm withdrawal
+    B->>A: request_onchain_funds (pending_user_transfer_start; the anchor generates the memo)
+    R->>A: GET transaction: withdraw_anchor_account, amount_in, withdraw_memo
+    Note over R: checks account = disclosed distribution, exact amount, memo present<br/>Sign the withdrawal: one Freighter prompt (tx source = payment account, op source = recipient)
+    R->>O: POST /payments/:id/cash-out/submit {ref, signedXdr}
+    O->>O: assertCashOutPayment, payment account, balance, next sequence
+    O->>O: record ref + inner hash on the leg (CAS), CASH_OUT_SUBMITTED
+    O->>K: submitPayment (sponsor fee-bump)
+    K->>X: payment to the distribution account, with the memo
+    O->>O: CASH_OUT_ONCHAIN
+    B->>X: poller: the oldest payment with the memo, asset and exact amount
+    B->>A: notify_onchain_funds_received, then notify_offchain_funds_sent (simulated cash pickup)
+    A-->>O: signed callback: completed, withdraw_memo, external_transaction_id
+    O->>X: the leg's own transaction: from, destination, asset, amount, memo
+    O->>O: CASH_OUT_ANCHOR_COMPLETED, CASHED_OUT (leg CONFIRMED)
+```
+
+A callback before the chain shows the payment is kept as an event; the reconciler confirms once Horizon catches up. A `completed` or stopped callback is written before Corra answers `200`; if writing fails Corra answers `503` and the anchor resends. A blob that can never land (landed failed, or not on chain 120 s after its `maxTime`) is cleared from the leg, so the recipient can sign again; one that may still land blocks a second one.
 
 ## Summary
 - **Single atomic point:** the path payment (third leg). Everything before and after is saga.

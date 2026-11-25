@@ -4,7 +4,7 @@
 
 ## The two accounts
 
-The demo runs in the hosted app at [app.corra.money](https://app.corra.money). The sender is the reviewer's own Freighter wallet on testnet; no key is generated or shipped to the browser. The sender needs no XLM: account creation and trustlines are sponsored.
+The demo runs in the hosted app at [app.corra.money](https://app.corra.money). The sender is the reviewer's own Freighter wallet on testnet (Varial, the wallet formerly named Freighter); no key that can sign for the sender or hold value is generated or shipped to the browser; setup creates the sender's 0-XLM payment account with a throwaway key that the same transaction sets to weight 0, and the key is never stored. The sender needs no XLM: account creation and trustlines are sponsored.
 
 For the recipient, the app offers a public demo recipient account (`demoRecipient` in `packages/shared/src/testnet.ts`, created by `pnpm demo-recipient`), so one person can run a two-sided payment without a second wallet. It holds a trustline for every destination asset, its secret was discarded when it was created, and it only ever receives.
 
@@ -44,7 +44,35 @@ A demo that only shows the happy path is a demo that has not been tested. Three 
 
 - **A real anchor.** The cash-in runs against SDF Anchor Platform 4.8.0 that we operate at `anchor.corra.money`, because no third-party anchor can credit a token minted by our own issuer. The SPEI transfer behind it is simulated by the anchor's business server, so the gap between signing and cash-in is seconds.
 - **Price discovery.** The corridor rate comes from orderbooks our market-maker seeds. What is demonstrated is routing, ordering and execution under a signed cap.
-- **Money.** `CREDITED` means the recipient's testnet account holds the destination asset and the mock payout handler acknowledged. No fiat moves at any point.
+- **Money.** `CREDITED` means the recipient's testnet account holds the destination asset. The recipient can then cash it out at the test anchor (Cash out tab, a SEP-24 TESTPHP withdrawal); the cash pickup is simulated. No fiat moves at any point.
+
+## Month 2: balance, pool, cash-out
+
+The second walkthrough covers the three month-2 deliverables, with two Freighter accounts at 0 XLM (a sender S and a recipient R). Every step ends in a stellar.expert link or the anchor's own page.
+
+1. **Connect.** One SEP-10 sign-in at the anchor; it is never submitted.
+2. **Set up.** One prompt; Corra sponsors the account, its TESTMXN trustline and the payment account, so S holds 0 XLM.
+3. **Add money.** 2,000 at the anchor's page; the simulated SPEI makes the anchor pay TESTMXN into S's own account. The deposit is tied to no payment.
+4. **History.** The deposit row shows the anchor's reference and opens its transaction on stellar.expert.
+
+   > Proves: a deposit into the sender's own account, confirmed from the chain, not from the anchor's word.
+
+5. **Send from the balance.** Philippines, 500, "Pay from my balance now": one prompt, one ledger. On stellar.expert the transaction source is S's payment account, the operation source is S, and Corra's sponsor pays the fee.
+6. **Four more corridors.** Brazil, Argentina, Indonesia, Thailand, each from the same balance; History lists all five.
+
+   > Proves: five sends from one balance, none of them needing a new deposit.
+
+7. **The pool.** The pool card on the Balance tab: On-Ice, 0% rate, borrowing off. The admin cannot move or lock anyone's deposit without a week of on-chain notice; withdrawals work in every pool state.
+8. **Move 100 in, take it back.** One prompt each; both fee-bumped by Corra, S still at 0 XLM.
+
+   > Proves: a deposit into Corra's Blend pool and a withdrawal, signed by the sender's account and fee-bumped.
+
+9. **Cash out (R).** R's Cash out tab lists the TESTPHP it received. Cash out opens the anchor's page; confirm there, then sign one payment to the anchor's distribution account. Corra shows "Paid to the anchor", and the anchor's transaction page says completed.
+10. **Three sign-ups in one ledger.** `pnpm concurrent-setups` in a terminal: three sponsored setups in one ledger, each sourced by a different channel account.
+11. **CI.** The green `no-server-side-signing` job.
+12. **EVIDENCE.md.** Every item above, with its archived transaction JSON.
+
+If the testnet was reset before recording, the walkthrough says so: SDF reset testnet on 2026-12-16, the stack was rebuilt by script with the same addresses, and the pool has new contract ids.
 
 ## Timing
 

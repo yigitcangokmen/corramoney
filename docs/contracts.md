@@ -79,8 +79,15 @@ export type LegStatus = "PENDING" | "CONFIRMED" | "FAILED";
 
 export type Sep24Callback = {
   ref: string;                // SEP-24 transaction id on the anchor side
-  kind: "deposit" | "withdraw";
-  status: LegStatus;
+  kind: "deposit" | "withdrawal";
+  status: LegStatus;          // completed -> CONFIRMED; error | expired -> FAILED (+ refunded, withdrawals); else PENDING
+  anchorStatus?: string;      // the anchor's raw SEP-24 status
+  stellarTxId?: string;
+  moreInfoUrl?: string;
+  depositMemo?: string;       // deposits: base64 hash memo
+  account?: string;           // deposits: the account the anchor pays
+  withdrawMemo?: { type: "id" | "text" | "hash"; value: string };  // withdrawals: the memo the anchor asked for
+  externalId?: string;        // withdrawals: the anchor's payout reference
   at: number;
   raw: unknown;               // original payload (audit)
 };
@@ -90,7 +97,7 @@ export type Sep24Callback = {
 
 ## 4. Stellar Gateway (`packages/stellar`)
 
-There is no `KeyStore` interface here, and that is the point: the orchestrator never signs with a user's key and never builds the payment. The browser builds and signs it (`buildStrictReceive`, exported from `packages/stellar`); the saga checks the signed XDR against the quote (`assertBoundPayment`) and later submits it. The server's own two keys, the fee-and-sponsor account (`createSponsor`, fee-bumps and sponsorship setups only) and the SEP-10 client_domain key (`services/orchestrator/src/client-domain.ts`), can move no user value.
+There is no `KeyStore` interface here, and that is the point: the orchestrator never signs with a user's key and never builds the payment. The browser builds and signs it (`buildStrictReceive`, exported from `packages/stellar`); the saga checks the signed XDR against the quote (`assertBoundPayment`) and later submits it. The server's own keys, the fee-and-sponsor account (`createSponsor`, fee-bumps and sponsorship setups only), the SEP-10 client_domain key (`services/orchestrator/src/client-domain.ts`) and five channel accounts that only source sponsored setups creating an account (fee and sequence only; no reserve, no value, never a signer) (`createChannels`), can move no user value.
 
 ```ts
 export type PathResult = { path: AssetId[]; source: Money };
@@ -154,9 +161,6 @@ export type Payment = {
 
 export type AnchorQuote = { id: string; expiresAt: number };
 
-/** The cash-out leg. In Phase 1 it is createMockPayout(), which acknowledges without moving anything. */
-export type PayoutHandler = { acknowledge(p: Payment): Promise<{ ref: string }> };
-
 export type SagaDeps = {
   store: SagaStore;
   gateway: StellarGateway;
@@ -166,7 +170,6 @@ export type SagaDeps = {
   anchorId: string;
   /** Optional server-side SEP-38 hook. The orchestrator does not set it: the browser requests the firm quote. */
   anchorQuote?: (q: { source: Quote['source']; dest: Quote['dest'] }) => Promise<AnchorQuote | null>;
-  payout?: PayoutHandler;      // defaults to createMockPayout()
   now?: () => number;
   newId?: (prefix: string) => string;
   slippageBps?: number;        // default 150
@@ -201,3 +204,29 @@ type Saga = {
 `SagaStore` (in `store.ts`) is the persistence the saga needs. Its `transition()` must be atomic: apply only if the payment is still in `from`, upsert legs, append the next event. `InMemorySagaStore` ships with the package; the orchestrator's `PostgresSagaStore` is the production one.
 
 Allowed transitions and invariants are in [ledger](ledger.md). See also [architecture](architecture.md).
+
+### Cash-out (D3, `packages/settlement-saga/src/cash-out.ts`)
+
+`CREDITED` writes the payment's `cash_out` leg `PENDING`. The recipient's withdrawal is recorded on it by `createCashOuts`, over the same `SagaStore`:
+
+```ts
+export type CashOutsDeps = {
+  store: SagaStore; gateway: StellarGateway; networkPassphrase: string; anchorId: string;
+  anchorDistribution: string;  // the anchor's disclosed distribution account
+  asset: AssetId;              // TESTPHP, corridor issuer
+  now?: () => number; log?: (line: { evt: string } & Record<string, unknown>) => void;
+};
+export function createCashOuts(deps: CashOutsDeps): {
+  submit(input: { paymentId: string; ref: string; signedXdr: string; admit?: () => boolean }): Promise<CashOutResult>;
+  onCallback(ev: Sep24Callback): Promise<Payment | null>;   // kind 'withdrawal', signature already verified
+  reconcile(idleMs?: number, limit?: number): Promise<number>;
+};
+
+// SagaStore additions
+recordCashOut(paymentId: string, expectTxHash: string | null, patch: CashOutPatch, event: NewEvent): Promise<Payment | null>;
+findPaymentByCashOutRef(anchorId: string, ref: string): Promise<Payment | null>;
+listOpenCashOuts(idleMs: number, now: number, limit: number): Promise<Payment[]>;
+touchCashOut(paymentId: string): Promise<void>;
+```
+
+`recordCashOut` is a compare-and-set on the leg's `tx_hash` (explicit nulls clear; it never changes the payment's state). The withdrawal blob is checked offline by `assertCashOutPayment` in `packages/stellar/src/validate.ts` and built by `buildCashOutPayment` in `build.ts`.
