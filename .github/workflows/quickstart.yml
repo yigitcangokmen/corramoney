@@ -29,6 +29,9 @@ jobs:
       - name: Create testnet accounts, assets, orderbooks and SACs
         run: pnpm seed-testnet
 
+      - name: Demo recipient trusting this run's destination assets
+        run: pnpm demo-recipient
+
       - name: Deliverable 1 mechanics on chain (sponsored setup, sign-before-cash-in, fee-bump, cap exceeded, expiry)
         run: pnpm onchain-check
 
