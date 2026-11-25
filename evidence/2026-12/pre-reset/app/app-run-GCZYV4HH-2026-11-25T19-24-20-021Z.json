@@ -1,0 +1,36 @@
+{
+  "phase": "pre-reset",
+  "origin": "prod",
+  "orchestrator": "https://api.corra.money",
+  "writtenAt": "2026-11-25T19:24:20.026Z",
+  "account": "GCZYV4HHHKJN7ANMQ3NUB3R6DJM6FYRAMTKJ424UX4LPA4GMDBAN2CLB",
+  "recipient": null,
+  "viaApp": true,
+  "deposits": [
+    {
+      "id": "dep_c75f9958682e464bb52c995c0c2eee61",
+      "status": "CONFIRMED",
+      "matchedBy": "ref",
+      "anchorRef": "5f14368e-2416-401b-9efb-0156bfce9ea6",
+      "txHash": "0ed307d9efe8939caa4d65990def721dcdb42bbfd15d3ec134eb31cf35115b4b",
+      "credited": "112.2000000"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pmt_b486aa1fc73b4556900213aeaa9fe1b4",
+      "publicId": "CORRA-A92GQC",
+      "kind": "balance",
+      "state": "CREDITED",
+      "recipient": "GBUUVSY5KBG5JNQNTHSF7L5KJ7VKJ732JOS3KJXUALBEQSLHX4MGJEKO",
+      "destAsset": "TESTPHP",
+      "destAmount": "50.0000000",
+      "txHash": "e392bdbea51847c463af0c9d0a3a45735228a10e1be1c0d5acccbf81d52b7f26",
+      "ledger": 5922200
+    }
+  ],
+  "pool": {
+    "ops": []
+  },
+  "cashOuts": []
+}
