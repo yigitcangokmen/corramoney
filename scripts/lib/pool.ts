@@ -97,17 +97,29 @@ export async function sendAndWait(tx: S.Transaction | S.FeeBumpTransaction, labe
   throw new Error(`${label}: not landed within 60 s (${sent.hash})`);
 }
 
-/** One admin-signed Soroban call: simulate (prepareTransaction), sign, send, wait. */
+/**
+ * One admin-signed Soroban call: simulate (prepareTransaction), sign, send, wait. The RPC can return a
+ * sequence one behind right after the previous call landed; tx_bad_seq at send is never applied, so it
+ * is retried with a fresh account read.
+ */
 export async function invoke(kp: S.Keypair, op: string | S.xdr.Operation, label: string) {
-  const account = await rpc.getAccount(kp.publicKey());
   const operation = typeof op === 'string' ? S.xdr.Operation.fromXDR(op, 'base64') : op;
-  const built = new S.TransactionBuilder(account, { fee: '10000', networkPassphrase: NP })
-    .addOperation(operation).setTimeout(120).build();
-  const tx = await rpc.prepareTransaction(built);
-  tx.sign(kp);
-  const out = await sendAndWait(tx, label);
-  console.log(`  ${label}: ${out.hash} (ledger ${out.ledger})`);
-  return out;
+  for (let attempt = 1; ; attempt++) {
+    const account = await rpc.getAccount(kp.publicKey());
+    const built = new S.TransactionBuilder(account, { fee: '10000', networkPassphrase: NP })
+      .addOperation(operation).setTimeout(120).build();
+    const tx = await rpc.prepareTransaction(built);
+    tx.sign(kp);
+    try {
+      const out = await sendAndWait(tx, label);
+      console.log(`  ${label}: ${out.hash} (ledger ${out.ledger})`);
+      return out;
+    } catch (e) {
+      if (attempt >= 3 || String((e as Error).message) !== `${label}: tx_bad_seq`) throw e;
+      console.log(`  ${label}: tx_bad_seq at send (stale sequence), retry ${attempt}`);
+      await sleep(3000);
+    }
+  }
 }
 
 /** Simulates a read-only call. The source only has to be a valid G address. */
