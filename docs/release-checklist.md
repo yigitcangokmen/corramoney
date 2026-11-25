@@ -77,7 +77,7 @@ Then:
 - Wait 10 minutes.
 - Window B: `drive-payment --cash-out` (2), `balance-check` (1), `anchor-check` (1).
 
-Each with `ORCHESTRATOR_URL=https://api.corra.money ANCHOR_DOMAIN=anchor.corra.money ANCHOR_BUSINESS_URL=https://anchor.corra.money`
+Each with `ORCHESTRATOR_URL=https://api.corra.money ANCHOR_DOMAIN=anchor.corra.money ANCHOR_BUSINESS_URL=https://anchor.corra.money CORRA_CLIENT_DOMAIN=api.corra.money`
 and `EVIDENCE_PHASE` set. Then the Freighter run by hand (HUMAN-TASKS.md), `pnpm evidence-app-run --account G... --via-app` (only for that run in the app),
 `pnpm archive-tx --phase <phase>` and `pnpm evidence-index --check`.
 
